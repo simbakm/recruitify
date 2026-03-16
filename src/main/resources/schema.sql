@@ -44,3 +44,63 @@ CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
 CREATE INDEX IF NOT EXISTS idx_companies_industry ON companies(industry);
 CREATE INDEX IF NOT EXISTS idx_companies_size ON companies(size);
 CREATE INDEX IF NOT EXISTS idx_company_benefits_company_id ON company_benefits(company_id);
+
+-- Create vacancies table
+CREATE TABLE IF NOT EXISTS vacancies (
+                          id BIGSERIAL PRIMARY KEY,
+                          title VARCHAR(255) NOT NULL,
+                          category VARCHAR(255),
+                          location VARCHAR(255),
+                          employment_type VARCHAR(50),
+                          salary_min INTEGER,
+                          salary_max INTEGER,
+                          salary_currency VARCHAR(10),
+                          description TEXT,
+                          requirements TEXT,
+                          status VARCHAR(50),
+                          posted_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          company_id INTEGER REFERENCES companies(id) ON DELETE SET NULL,
+                          applicant_count INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_vacancies_company_id ON vacancies(company_id);
+CREATE INDEX IF NOT EXISTS idx_vacancies_status ON vacancies(status);
+CREATE INDEX IF NOT EXISTS idx_vacancies_category ON vacancies(category);
+
+-- Create recruiters table
+CREATE TABLE IF NOT EXISTS recruiters (
+                           id BIGSERIAL PRIMARY KEY,
+                           first_name VARCHAR(255) NOT NULL,
+                           last_name VARCHAR(255) NOT NULL,
+                           email VARCHAR(255) UNIQUE NOT NULL,
+                           phone VARCHAR(50),
+                           role VARCHAR(100) NOT NULL,
+                           avatar_url VARCHAR(500),
+                           company_id INTEGER REFERENCES companies(id) ON DELETE SET NULL,
+                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                           notification_preferences TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_recruiters_company_id ON recruiters(company_id);
+CREATE INDEX IF NOT EXISTS idx_recruiters_email ON recruiters(email);
+
+-- Create interviews table
+CREATE TABLE IF NOT EXISTS interviews (
+                          id BIGSERIAL PRIMARY KEY,
+                          application_id INTEGER,
+                          candidate_id INTEGER,
+                          candidate_name VARCHAR(255) NOT NULL,
+                          candidate_avatar VARCHAR(500),
+                          position VARCHAR(255) NOT NULL,
+                          interview_date VARCHAR(50) NOT NULL,
+                          interview_time VARCHAR(50) NOT NULL,
+                          type VARCHAR(50) NOT NULL,
+                          status VARCHAR(50) NOT NULL,
+                          meeting_link VARCHAR(1000),
+                          location VARCHAR(255),
+                          notes TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_interviews_application_id ON interviews(application_id);
+CREATE INDEX IF NOT EXISTS idx_interviews_candidate_id ON interviews(candidate_id);
+CREATE INDEX IF NOT EXISTS idx_interviews_status ON interviews(status);

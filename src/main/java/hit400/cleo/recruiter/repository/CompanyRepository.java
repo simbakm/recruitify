@@ -1,8 +1,8 @@
-package hit400.cleo.recruitify.repository;
+package hit400.cleo.recruiter.repository;
 
 
-import hit400.cleo.recruitify.model.Company;
-import hit400.cleo.recruitify.model.enums.CompanySize;
+import hit400.cleo.recruiter.model.Company;
+import hit400.cleo.recruiter.model.Enums.CompanySize;
 import hit400.cleo.recruitify.model.enums.Industry;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;

@@ -1,4 +1,4 @@
-package hit400.cleo.recruitify.model;
+package hit400.cleo.recruiter.model;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;

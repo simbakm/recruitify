@@ -1,4 +1,4 @@
-package hit400.cleo.recruitify.model.enums;
+package hit400.cleo.recruiter.model.Enums;
 
 
 public enum CompanySize {

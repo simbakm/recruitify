@@ -18,7 +18,9 @@ import org.springframework.core.io.Resource;
 
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("api/cv")
+
 @RequiredArgsConstructor
 public class CvController {
     private final CvExtractionService extractionService;
