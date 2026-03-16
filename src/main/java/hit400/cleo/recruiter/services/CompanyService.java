@@ -1,14 +1,15 @@
-package hit400.cleo.recruitify.service;
+package hit400.cleo.recruiter.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hit400.cleo.recruitify.dto.CompanyRequestDTO;
-import hit400.cleo.recruitify.dto.CompanyResponseDTO;
-import hit400.cleo.recruitify.model.Company;
-import hit400.cleo.recruitify.model.CompanyBenefit;
-import hit400.cleo.recruitify.model.enums.CompanySize;
+
+import hit400.cleo.recruiter.dtos.CompanyRequestDTO;
+import hit400.cleo.recruiter.dtos.CompanyResponseDTO;
+import hit400.cleo.recruiter.model.Company;
+import hit400.cleo.recruiter.model.CompanyBenefit;
+import hit400.cleo.recruiter.model.Enums.CompanySize;
+import hit400.cleo.recruiter.repository.CompanyBenefitRepository;
+import hit400.cleo.recruiter.repository.CompanyRepository;
 import hit400.cleo.recruitify.model.enums.Industry;
-import hit400.cleo.recruitify.repository.CompanyBenefitRepository;
-import hit400.cleo.recruitify.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;

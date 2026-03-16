@@ -1,6 +1,6 @@
-package hit400.cleo.recruitify.model;
+package hit400.cleo.recruiter.model;
 
-import hit400.cleo.recruitify.model.enums.CompanySize;
+import hit400.cleo.recruiter.model.Enums.CompanySize;
 import hit400.cleo.recruitify.model.enums.Industry;
 import lombok.*;
 import org.springframework.data.annotation.Id;

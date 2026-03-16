@@ -1,9 +1,10 @@
-package hit400.cleo.recruitify.repository;
+package hit400.cleo.recruiter.repository;
 
 
-import hit400.cleo.recruitify.model.CompanyBenefit;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
+
+import hit400.cleo.recruiter.model.CompanyBenefit;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

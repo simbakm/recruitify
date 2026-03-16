@@ -1,8 +1,9 @@
-package hit400.cleo.recruitify.dto;
+package hit400.cleo.recruiter.dtos;
 
-import hit400.cleo.recruitify.model.enums.CompanySize;
+import hit400.cleo.recruiter.model.Enums.CompanySize;
 import hit400.cleo.recruitify.model.enums.Industry;
 import lombok.*;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -10,7 +11,9 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CompanyRequestDTO {
+public class CompanyResponseDTO {
+
+    private Integer id;
 
     private String name;
 
@@ -31,4 +34,9 @@ public class CompanyRequestDTO {
     private List<String> benefits;
 
     private Map<String, String> socialLinks;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 }
+
