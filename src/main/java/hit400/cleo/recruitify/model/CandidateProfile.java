@@ -51,6 +51,9 @@ public class CandidateProfile implements Persistable<Long> {
     @Column("skills")
     private String skillsJson;
 
+    @Column("cv_file_path")
+    private String cvFilePath;
+
     @Column("created_at")
     private LocalDateTime createdAt;
 

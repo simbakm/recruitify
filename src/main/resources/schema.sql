@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS candidate_profiles (
     address TEXT,
     objectives TEXT,
     experiences TEXT,
+    cv_file_path TEXT,
     educations TEXT,
     skills TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
