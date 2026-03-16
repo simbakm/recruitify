@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("api/cv")
+
 @RequiredArgsConstructor
 public class CvController {
     private final CvExtractionService extractionService;
