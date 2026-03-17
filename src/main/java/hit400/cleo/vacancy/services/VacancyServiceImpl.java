@@ -1,23 +1,31 @@
 package hit400.cleo.vacancy.services;
 
+import hit400.cleo.recruitify.model.CandidateProfile;
+import hit400.cleo.recruitify.repository.CandidateProfileRepository;
 import hit400.cleo.vacancy.dtos.VacancyRequest;
 import hit400.cleo.vacancy.dtos.VacancyResponse;
 import hit400.cleo.vacancy.model.Vacancy;
 import hit400.cleo.vacancy.repository.VacancyRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class VacancyServiceImpl implements VacancyService {
 
     private final VacancyRepository vacancyRepository;
+    private final CandidateProfileRepository candidateProfileRepository;
 
     @Override
     public Mono<VacancyResponse> create(VacancyRequest request) {
@@ -35,6 +43,30 @@ public class VacancyServiceImpl implements VacancyService {
     @Override
     public Flux<VacancyResponse> getAll() {
         return vacancyRepository.findAll().map(this::toResponse);
+    }
+
+    @Override
+    public Flux<VacancyResponse> getRecommended(Long profileId) {
+        return candidateProfileRepository.findById(profileId)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Candidate profile not found")))
+                .flatMapMany(profile -> {
+                    if (Boolean.FALSE.equals(profile.getLookingForJob())) {
+                        return Flux.empty();
+                    }
+                    return vacancyRepository.findAll()
+                            .collectList()
+                            .flatMapMany(vacancies -> {
+                                List<ScoredVacancy> scored = vacancies.stream()
+                                        .map(vacancy -> new ScoredVacancy(vacancy, scoreVacancy(vacancy, profile)))
+                                        .filter(item -> item.score() > 0)
+                                        .sorted(Comparator.comparingInt(ScoredVacancy::score).reversed())
+                                        .collect(Collectors.toList());
+                                return Flux.fromIterable(scored)
+                                        .map(ScoredVacancy::vacancy)
+                                        .map(this::toResponse);
+                            });
+                });
     }
 
     @Override
@@ -101,5 +133,99 @@ public class VacancyServiceImpl implements VacancyService {
                 .applicantCount(vacancy.getApplicantCount())
                 .build();
     }
+
+    private int scoreVacancy(Vacancy vacancy, CandidateProfile profile) {
+        int score = 0;
+
+        if (matchesCategory(vacancy, profile)) score += 2;
+        if (matchesTitle(vacancy, profile)) score += 2;
+        if (matchesWorkMode(vacancy, profile)) score += 1;
+        if (matchesLocation(vacancy, profile)) score += 1;
+        if (matchesSalary(vacancy, profile)) score += 2;
+
+        List<String> profileSkills = profile.getSkills() != null ? profile.getSkills() : List.of();
+        List<String> vacancyReqs = vacancy.getRequirements() != null ? vacancy.getRequirements() : List.of();
+        score += countSkillMatches(profileSkills, vacancyReqs);
+
+        return score;
+    }
+
+    private boolean matchesCategory(Vacancy vacancy, CandidateProfile profile) {
+        return notBlank(profile.getDesiredCategory())
+                && equalsIgnoreCase(profile.getDesiredCategory(), vacancy.getCategory());
+    }
+
+    private boolean matchesTitle(Vacancy vacancy, CandidateProfile profile) {
+        return notBlank(profile.getDesiredJobTitle())
+                && containsIgnoreCase(vacancy.getTitle(), profile.getDesiredJobTitle());
+    }
+
+    private boolean matchesWorkMode(Vacancy vacancy, CandidateProfile profile) {
+        return notBlank(profile.getPreferredWorkMode())
+                && equalsIgnoreCase(profile.getPreferredWorkMode(), vacancy.getEmploymentType());
+    }
+
+    private boolean matchesLocation(Vacancy vacancy, CandidateProfile profile) {
+        return notBlank(profile.getPreferredLocation())
+                && containsIgnoreCase(vacancy.getLocation(), profile.getPreferredLocation());
+    }
+
+    private boolean matchesSalary(Vacancy vacancy, CandidateProfile profile) {
+        Integer desiredMin = profile.getSalaryMin();
+        Integer desiredMax = profile.getSalaryMax();
+        Integer vacancyMin = vacancy.getSalaryMin();
+        Integer vacancyMax = vacancy.getSalaryMax();
+
+        if (desiredMin == null && desiredMax == null) return false;
+        if (vacancyMin == null && vacancyMax == null) return false;
+
+        if (notBlank(profile.getSalaryCurrency()) && notBlank(vacancy.getSalaryCurrency())
+                && !equalsIgnoreCase(profile.getSalaryCurrency(), vacancy.getSalaryCurrency())) {
+            return false;
+        }
+
+        int min = desiredMin != null ? desiredMin : Integer.MIN_VALUE;
+        int max = desiredMax != null ? desiredMax : Integer.MAX_VALUE;
+        int vMin = vacancyMin != null ? vacancyMin : Integer.MIN_VALUE;
+        int vMax = vacancyMax != null ? vacancyMax : Integer.MAX_VALUE;
+
+        return vMax >= min && vMin <= max;
+    }
+
+    private int countSkillMatches(List<String> profileSkills, List<String> vacancyReqs) {
+        int count = 0;
+        for (String skill : profileSkills) {
+            if (containsIgnoreCaseInList(vacancyReqs, skill)) {
+                count += 1;
+            }
+        }
+        return count;
+    }
+
+    private boolean containsIgnoreCaseInList(List<String> items, String needle) {
+        if (!notBlank(needle)) return false;
+        for (String item : items) {
+            if (containsIgnoreCase(item, needle)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsIgnoreCase(String haystack, String needle) {
+        if (!notBlank(haystack) || !notBlank(needle)) return false;
+        return haystack.toLowerCase(Locale.ROOT).contains(needle.toLowerCase(Locale.ROOT));
+    }
+
+    private boolean equalsIgnoreCase(String a, String b) {
+        if (!notBlank(a) || !notBlank(b)) return false;
+        return a.equalsIgnoreCase(b);
+    }
+
+    private boolean notBlank(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private record ScoredVacancy(Vacancy vacancy, int score) {}
 }
 

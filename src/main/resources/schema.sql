@@ -9,6 +9,14 @@ CREATE TABLE IF NOT EXISTS candidate_profiles (
     experiences TEXT,
     cv_file_path TEXT,
     educations TEXT,
+    looking_for_job BOOLEAN,
+    desired_job_title VARCHAR(255),
+    desired_category VARCHAR(255),
+    preferred_work_mode VARCHAR(50),
+    preferred_location VARCHAR(255),
+    salary_min INTEGER,
+    salary_max INTEGER,
+    salary_currency VARCHAR(10),
     skills TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );

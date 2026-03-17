@@ -41,6 +41,30 @@ public class CandidateProfile implements Persistable<Long> {
     @Column("objectives")
     private String objectives;
 
+    @Column("looking_for_job")
+    private Boolean lookingForJob;
+
+    @Column("desired_job_title")
+    private String desiredJobTitle;
+
+    @Column("desired_category")
+    private String desiredCategory;
+
+    @Column("preferred_work_mode")
+    private String preferredWorkMode;
+
+    @Column("preferred_location")
+    private String preferredLocation;
+
+    @Column("salary_min")
+    private Integer salaryMin;
+
+    @Column("salary_max")
+    private Integer salaryMax;
+
+    @Column("salary_currency")
+    private String salaryCurrency;
+
     // Store as JSON strings in database
     @Column("experiences")
     private String experiencesJson;

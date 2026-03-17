@@ -34,6 +34,14 @@ public class ProfileService {
                     if (dto.phone() != null) profile.setPhone(dto.phone());
                     if (dto.address() != null) profile.setAddress(dto.address());
                     if (dto.objectives() != null) profile.setObjectives(dto.objectives());
+                    if (dto.lookingForJob() != null) profile.setLookingForJob(dto.lookingForJob());
+                    if (dto.desiredJobTitle() != null) profile.setDesiredJobTitle(dto.desiredJobTitle());
+                    if (dto.desiredCategory() != null) profile.setDesiredCategory(dto.desiredCategory());
+                    if (dto.preferredWorkMode() != null) profile.setPreferredWorkMode(dto.preferredWorkMode());
+                    if (dto.preferredLocation() != null) profile.setPreferredLocation(dto.preferredLocation());
+                    if (dto.salaryMin() != null) profile.setSalaryMin(dto.salaryMin());
+                    if (dto.salaryMax() != null) profile.setSalaryMax(dto.salaryMax());
+                    if (dto.salaryCurrency() != null) profile.setSalaryCurrency(dto.salaryCurrency());
                     if (dto.skills() != null) profile.setSkills(dto.skills());
                     if (dto.experiences() != null) profile.setExperiences(dto.experiences());
                     if (dto.educations() != null) profile.setEducations(dto.educations());

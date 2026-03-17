@@ -36,6 +36,11 @@ public class VacancyController {
         return vacancyService.getAll();
     }
 
+    @GetMapping("/recommended/{profileId}")
+    public Flux<VacancyResponse> getRecommended(@PathVariable Long profileId) {
+        return vacancyService.getRecommended(profileId);
+    }
+
     @PutMapping("/{id}")
     public Mono<ResponseEntity<VacancyResponse>> update(@PathVariable Long id, @RequestBody VacancyRequest request) {
         return vacancyService.update(id, request)
