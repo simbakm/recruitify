@@ -41,6 +41,9 @@ public class CandidateProfile implements Persistable<Long> {
     @Column("objectives")
     private String objectives;
 
+    @Column("profile_pic")
+    private String profilePic;
+
     @Column("looking_for_job")
     private Boolean lookingForJob;
 
