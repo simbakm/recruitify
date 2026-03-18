@@ -15,6 +15,11 @@ public class ProfileController {
 
     private final ProfileService profileService;
 
+    @PostMapping
+    public Mono<CandidateProfile> createProfile(@RequestBody CandidateProfileRequestDTO dto) {
+        return profileService.createProfile(dto);
+    }
+
     @GetMapping("/{id}")
     public Mono<CandidateProfile> getProfile(@PathVariable Long id) {
         return profileService.getProfile(id);

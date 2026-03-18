@@ -23,6 +23,22 @@ CREATE TABLE IF NOT EXISTS candidate_profiles (
 
 CREATE INDEX IF NOT EXISTS idx_candidate_profiles_email ON candidate_profiles(email);
 
+-- If the table already existed from an older schema, ensure new columns are present (idempotent).
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS objectives TEXT;
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS experiences TEXT;
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS cv_file_path TEXT;
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS educations TEXT;
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS looking_for_job BOOLEAN;
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS desired_job_title VARCHAR(255);
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS desired_category VARCHAR(255);
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS preferred_work_mode VARCHAR(50);
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS preferred_location VARCHAR(255);
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS salary_min INTEGER;
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS salary_max INTEGER;
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS salary_currency VARCHAR(10);
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS skills TEXT;
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
 -- create company query
 -- Create the main company table
 CREATE TABLE IF NOT EXISTS companies (

@@ -81,9 +81,9 @@ public class CvExtractionService {
                                     profile.setCvFilePath(filePath); // Set the file path
                                     return profile;
                                 })
-                                .flatMap(candidateProfileRepository::save)
+                                .flatMap(this::upsertByEmail)
                 )
-                .doOnSuccess(profile -> log.info("Successfully saved profile for: {}", profile.getEmail()))
+                .doOnSuccess(profile -> log.info("Saved successfully: profile id={} email={}", profile.getId(), profile.getEmail()))
                 .doOnError(error -> log.error("Failed to process CV: {}", error.getMessage()));
     }
 
@@ -337,5 +337,37 @@ public class CvExtractionService {
     public Mono<Resource> getCvFile(Long profileId) {
         return candidateProfileRepository.findById(profileId)
                 .map(profile -> new FileSystemResource(profile.getCvFilePath()));
+    }
+
+    private Mono<CandidateProfile> upsertByEmail(CandidateProfile incoming) {
+        if (incoming.getEmail() == null || incoming.getEmail().isBlank()) {
+            if (incoming.getCreatedAt() == null) incoming.setCreatedAt(LocalDateTime.now());
+            if (incoming.getName() == null || incoming.getName().isBlank()) {
+                return Mono.error(new IllegalArgumentException("name is required"));
+            }
+            incoming.setNew(true);
+            return candidateProfileRepository.save(incoming);
+        }
+
+        return candidateProfileRepository.findByEmail(incoming.getEmail())
+                .flatMap(existing -> {
+                    incoming.setId(existing.getId());
+                    incoming.setNew(false);
+                    if (incoming.getName() == null || incoming.getName().isBlank()) {
+                        incoming.setName(existing.getName());
+                    }
+                    if (incoming.getCreatedAt() == null && existing.getCreatedAt() != null) {
+                        incoming.setCreatedAt(existing.getCreatedAt());
+                    }
+                    return candidateProfileRepository.save(incoming);
+                })
+                .switchIfEmpty(Mono.defer(() -> {
+                    if (incoming.getCreatedAt() == null) incoming.setCreatedAt(LocalDateTime.now());
+                    if (incoming.getName() == null || incoming.getName().isBlank()) {
+                        return Mono.error(new IllegalArgumentException("name is required"));
+                    }
+                    incoming.setNew(true);
+                    return candidateProfileRepository.save(incoming);
+                }));
     }
 }

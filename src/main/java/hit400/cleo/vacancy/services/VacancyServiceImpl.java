@@ -2,11 +2,13 @@ package hit400.cleo.vacancy.services;
 
 import hit400.cleo.recruitify.model.CandidateProfile;
 import hit400.cleo.recruitify.repository.CandidateProfileRepository;
+import hit400.cleo.recruiter.repository.CompanyRepository;
 import hit400.cleo.vacancy.dtos.VacancyRequest;
 import hit400.cleo.vacancy.dtos.VacancyResponse;
 import hit400.cleo.vacancy.model.Vacancy;
 import hit400.cleo.vacancy.repository.VacancyRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -22,17 +24,22 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VacancyServiceImpl implements VacancyService {
 
     private final VacancyRepository vacancyRepository;
     private final CandidateProfileRepository candidateProfileRepository;
+    private final CompanyRepository companyRepository;
 
     @Override
     public Mono<VacancyResponse> create(VacancyRequest request) {
         Vacancy vacancy = fromRequest(request, new Vacancy());
         if (vacancy.getPostedDate() == null) vacancy.setPostedDate(LocalDateTime.now());
         if (vacancy.getApplicantCount() == null) vacancy.setApplicantCount(0);
-        return vacancyRepository.save(vacancy).map(this::toResponse);
+        return validateCompanyId(vacancy.getCompanyId())
+                .then(vacancyRepository.save(vacancy))
+                .map(this::toResponse)
+                .doOnSuccess(saved -> log.info("Saved successfully: vacancy id={}", saved.getId()));
     }
 
     @Override
@@ -72,8 +79,13 @@ public class VacancyServiceImpl implements VacancyService {
     @Override
     public Mono<VacancyResponse> update(Long id, VacancyRequest request) {
         return vacancyRepository.findById(id)
-                .flatMap(existing -> vacancyRepository.save(fromRequest(request, existing)))
-                .map(this::toResponse);
+                .flatMap(existing -> {
+                    Vacancy updated = fromRequest(request, existing);
+                    return validateCompanyId(updated.getCompanyId())
+                            .then(vacancyRepository.save(updated));
+                })
+                .map(this::toResponse)
+                .doOnSuccess(saved -> log.info("Saved successfully: vacancy id={}", saved.getId()));
     }
 
     @Override
@@ -132,6 +144,17 @@ public class VacancyServiceImpl implements VacancyService {
                 .companyId(vacancy.getCompanyId())
                 .applicantCount(vacancy.getApplicantCount())
                 .build();
+    }
+
+    private Mono<Void> validateCompanyId(Integer companyId) {
+        if (companyId == null) {
+            return Mono.empty();
+        }
+        return companyRepository.existsById(companyId)
+                .flatMap(exists -> exists
+                        ? Mono.<Void>empty()
+                        : Mono.error(new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST, "Invalid companyId: " + companyId)));
     }
 
     private int scoreVacancy(Vacancy vacancy, CandidateProfile profile) {

@@ -5,12 +5,14 @@ import hit400.cleo.recruiter.dtos.InterviewResponse;
 import hit400.cleo.recruiter.model.Interview;
 import hit400.cleo.recruiter.repository.InterviewRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InterviewServiceImpl implements InterviewService {
 
     private final InterviewRepository interviewRepository;
@@ -18,7 +20,9 @@ public class InterviewServiceImpl implements InterviewService {
     @Override
     public Mono<InterviewResponse> create(InterviewRequest request) {
         Interview interview = applyRequest(request, new Interview());
-        return interviewRepository.save(interview).map(this::toResponse);
+        return interviewRepository.save(interview)
+                .map(this::toResponse)
+                .doOnSuccess(saved -> log.info("Saved successfully: interview id={}", saved.getId()));
     }
 
     @Override
@@ -35,7 +39,8 @@ public class InterviewServiceImpl implements InterviewService {
     public Mono<InterviewResponse> update(Long id, InterviewRequest request) {
         return interviewRepository.findById(id)
                 .flatMap(existing -> interviewRepository.save(applyRequest(request, existing)))
-                .map(this::toResponse);
+                .map(this::toResponse)
+                .doOnSuccess(saved -> log.info("Saved successfully: interview id={}", saved.getId()));
     }
 
     @Override
@@ -77,4 +82,3 @@ public class InterviewServiceImpl implements InterviewService {
                 .build();
     }
 }
-

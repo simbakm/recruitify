@@ -5,6 +5,7 @@ import hit400.cleo.recruiter.dtos.RecruiterResponse;
 import hit400.cleo.recruiter.model.Recruiter;
 import hit400.cleo.recruiter.repository.RecruiterRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RecruiterServiceImpl implements RecruiterService {
 
     private final RecruiterRepository recruiterRepository;
@@ -21,7 +23,9 @@ public class RecruiterServiceImpl implements RecruiterService {
     public Mono<RecruiterResponse> create(RecruiterRequest request) {
         Recruiter recruiter = applyRequest(request, new Recruiter(), true);
         if (recruiter.getCreatedAt() == null) recruiter.setCreatedAt(LocalDateTime.now());
-        return recruiterRepository.save(recruiter).map(this::toResponse);
+        return recruiterRepository.save(recruiter)
+                .map(this::toResponse)
+                .doOnSuccess(saved -> log.info("Saved successfully: recruiter id={}", saved.getId()));
     }
 
     @Override
@@ -38,7 +42,8 @@ public class RecruiterServiceImpl implements RecruiterService {
     public Mono<RecruiterResponse> update(Long id, RecruiterRequest request) {
         return recruiterRepository.findById(id)
                 .flatMap(existing -> recruiterRepository.save(applyRequest(request, existing, false)))
-                .map(this::toResponse);
+                .map(this::toResponse)
+                .doOnSuccess(saved -> log.info("Saved successfully: recruiter id={}", saved.getId()));
     }
 
     @Override
@@ -99,4 +104,3 @@ public class RecruiterServiceImpl implements RecruiterService {
                 .build();
     }
 }
-

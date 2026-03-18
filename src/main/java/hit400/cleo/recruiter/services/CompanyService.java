@@ -11,6 +11,7 @@ import hit400.cleo.recruiter.repository.CompanyBenefitRepository;
 import hit400.cleo.recruiter.repository.CompanyRepository;
 import hit400.cleo.recruitify.model.enums.Industry;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -20,6 +21,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CompanyService {
 
     private final CompanyRepository companyRepository;
@@ -48,7 +50,8 @@ public class CompanyService {
                                 .then(Mono.just(savedCompany))
                         )
                 )
-                .flatMap(this::companyToResponseDTO);
+                .flatMap(this::companyToResponseDTO)
+                .doOnSuccess(dto -> log.info("Saved successfully: company id={}", dto.getId()));
     }
 
     /**
@@ -124,7 +127,8 @@ public class CompanyService {
                                             .thenReturn(savedCompany)
                             );
                 })
-                .flatMap(this::companyToResponseDTO);
+                .flatMap(this::companyToResponseDTO)
+                .doOnSuccess(dto -> log.info("Saved successfully: company id={}", dto.getId()));
     }
 
     /**

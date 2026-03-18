@@ -5,6 +5,7 @@ import hit400.cleo.candidate.dtos.ApplicationResponse;
 import hit400.cleo.candidate.models.Application;
 import hit400.cleo.candidate.repositories.ApplicationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ApplicationServiceImpl implements ApplicationService {
 
     private final ApplicationRepository applicationRepository;
@@ -22,7 +24,9 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = applyRequest(request, new Application());
         if (application.getAppliedDate() == null) application.setAppliedDate(LocalDateTime.now());
         if (application.getStatus() == null || application.getStatus().isBlank()) application.setStatus("New");
-        return applicationRepository.save(application).map(this::toResponse);
+        return applicationRepository.save(application)
+                .map(this::toResponse)
+                .doOnSuccess(saved -> log.info("Saved successfully: application id={}", saved.getId()));
     }
 
     @Override
@@ -39,7 +43,8 @@ public class ApplicationServiceImpl implements ApplicationService {
     public Mono<ApplicationResponse> update(Long id, ApplicationRequest request) {
         return applicationRepository.findById(id)
                 .flatMap(existing -> applicationRepository.save(applyRequest(request, existing)))
-                .map(this::toResponse);
+                .map(this::toResponse)
+                .doOnSuccess(saved -> log.info("Saved successfully: application id={}", saved.getId()));
     }
 
     @Override

@@ -6,6 +6,7 @@ import java.util.List;
 
 public record CandidateProfileRequestDTO(
             String name,
+            String email,
             String phone,
             String address,
             String objectives,
