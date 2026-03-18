@@ -3,7 +3,7 @@ package hit400.cleo.recruitify.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record CandidateProfileDto(
+public record CandidateProfileResponseDto(
         Long id,
         String name,
         String email,

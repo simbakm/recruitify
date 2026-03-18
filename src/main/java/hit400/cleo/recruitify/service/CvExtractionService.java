@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import hit400.cleo.recruitify.dto.CvUploadRequest;
 import hit400.cleo.recruitify.model.CandidateProfile;
 import hit400.cleo.recruitify.repository.CandidateProfileRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.codec.multipart.FilePart;
@@ -16,7 +18,10 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -30,12 +35,25 @@ import java.util.regex.Pattern;
 public class CvExtractionService {
 
     private final CandidateProfileRepository candidateProfileRepository;
-
+    private static final String CV_STORAGE_DIR = "uploads/cv/";
     private final ObjectMapper objectMapper;
-
 
     // Python microservice URL
     private static final String PYTHON_MICROSERVICE_URL = "http://localhost:5000/parse";
+
+
+    @PostConstruct
+    public void init() {
+        try {
+            Files.createDirectories(Paths.get(CV_STORAGE_DIR));
+            log.info("CV upload directory created/verified: {}", CV_STORAGE_DIR);
+        } catch (IOException e) {
+            log.error("Failed to create CV upload directory", e);
+            // Depending on your needs, you might want to throw a runtime exception
+            // to prevent the application from starting if the directory cannot be created.
+            throw new RuntimeException("Could not initialize CV storage directory", e);
+        }
+    }
 
     // DateTime formatters for various date formats
     private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
@@ -51,59 +69,69 @@ public class CvExtractionService {
             DateTimeFormatter.ofPattern("dd/MM/yyyy")                // 15/01/2016
     );
 
+    /**
+     * Main flow: save the CV file, call Python microservice, parse response, save profile.
+     */
     public Mono<CandidateProfile> extractAndSaveProfile(CvUploadRequest request) {
-        return callPythonMicroservice(request.cvFile())
-                .flatMap(this::parseStructuredData)
-                .flatMap(candidateProfileRepository::save)
+        return saveCvFile(request.cvFile())
+                .flatMap(filePath ->
+                        callPythonMicroservice(filePath)
+                                .flatMap(this::parseStructuredData)
+                                .map(profile -> {
+                                    profile.setCvFilePath(filePath); // Set the file path
+                                    return profile;
+                                })
+                                .flatMap(candidateProfileRepository::save)
+                )
                 .doOnSuccess(profile -> log.info("Successfully saved profile for: {}", profile.getEmail()))
                 .doOnError(error -> log.error("Failed to process CV: {}", error.getMessage()));
     }
 
     /**
-     * Call the Python microservice API to parse the PDF
+     * Save the uploaded file to disk using streaming (no memory buffering).
      */
-    private Mono<JsonNode> callPythonMicroservice(FilePart filePart) {
-        return DataBufferUtils.join(filePart.content())
-                .map(dataBuffer -> {
-                    byte[] bytes = new byte[dataBuffer.readableByteCount()];
-                    dataBuffer.read(bytes);
-                    DataBufferUtils.release(dataBuffer);
-                    return bytes;
-                })
-                .flatMap(fileBytes -> {
-                    // Create WebClient instance
-                    WebClient webClient = WebClient.builder()
-                            .baseUrl(PYTHON_MICROSERVICE_URL)
-                            .build();
-
-                    // Build multipart request
-                    MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
-                    bodyBuilder.part("file", fileBytes)
-                            .filename(filePart.filename())
-                            .contentType(MediaType.APPLICATION_PDF);
-
-                    log.info("Sending PDF to Python microservice: {}", filePart.filename());
-
-                    return webClient.post()
-                            .contentType(MediaType.MULTIPART_FORM_DATA)
-                            .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
-                            .retrieve()
-                            .bodyToMono(String.class)
-                            .map(response -> {
-                                log.debug("Python microservice response: {}", response);
-                                try {
-                                    return objectMapper.readTree(response);
-                                } catch (Exception e) {
-                                    throw new RuntimeException("Failed to parse microservice response", e);
-                                }
-                            })
-                            .doOnSuccess(json -> log.info("Successfully received parsed data from microservice"))
-                            .doOnError(error -> log.error("Error calling Python microservice: {}", error.getMessage()));
-                });
+    private Mono<String> saveCvFile(FilePart filePart) {
+        String filename = System.currentTimeMillis() + "_" + filePart.filename();
+        Path path = Paths.get(CV_STORAGE_DIR + filename);
+        return filePart.transferTo(path).thenReturn(path.toString());
     }
 
     /**
-     * Parse the JSON response from the microservice into a CandidateProfile
+     * Call the Python microservice, streaming the already-saved file.
+     */
+    private Mono<JsonNode> callPythonMicroservice(String filePath) {
+        Path path = Paths.get(filePath);
+        Resource resource = new FileSystemResource(path);
+
+        MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
+        bodyBuilder.part("file", resource)
+                .filename(path.getFileName().toString())
+                .contentType(MediaType.APPLICATION_PDF);
+
+        log.info("Sending PDF to Python microservice: {}", path.getFileName());
+
+        WebClient webClient = WebClient.builder()
+                .baseUrl(PYTHON_MICROSERVICE_URL)
+                .build();
+
+        return webClient.post()
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(response -> {
+                    try {
+                        return objectMapper.readTree(response);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to parse microservice response", e);
+                    }
+                })
+                .doOnSuccess(json -> log.info("Successfully received parsed data from microservice"))
+                .doOnError(error -> log.error("Error calling Python microservice: {}", error.getMessage()));
+    }
+
+    /**
+     * Parse the JSON response from the microservice into a CandidateProfile.
      */
     private Mono<CandidateProfile> parseStructuredData(JsonNode jsonNode) {
         return Mono.fromCallable(() -> {
@@ -130,17 +158,17 @@ public class CvExtractionService {
             String email = getJsonText(dataNode, "email");
             if (email == null || email.isEmpty()) {
                 log.warn("Email not found in parsed data");
-                // You might want to generate a placeholder or skip
+                // todo: what to do if the cv does not contain an email
             }
             profile.setEmail(email);
 
-            // Phone (optional)
+            // Phone
             profile.setPhone(getJsonText(dataNode, "phone"));
 
-            // Address (optional)
+            // Address
             profile.setAddress(getJsonText(dataNode, "location", "address"));
 
-            // Objectives (optional)
+            // Objectives
             profile.setObjectives(getJsonText(dataNode, "objectives", "objective", "summary"));
 
             // Parse skills (handle null)
@@ -229,7 +257,7 @@ public class CvExtractionService {
     }
 
     /**
-     * Helper method to get text from JSON node with multiple possible field names
+     * Helper method to get text from JSON node with multiple possible field names.
      */
     private String getJsonText(JsonNode node, String... fieldNames) {
         for (String fieldName : fieldNames) {
@@ -243,7 +271,7 @@ public class CvExtractionService {
     }
 
     /**
-     * Parse date string to LocalDateTime (handles various formats including year-only)
+     * Parse date string to LocalDateTime (handles various formats including year-only).
      */
     private LocalDateTime parseDate(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) {
@@ -301,5 +329,13 @@ public class CvExtractionService {
 
         log.warn("Could not parse date: {}", dateStr);
         return null;
+    }
+
+    /**
+     * Retrieve a CV file as a Resource for streaming to the client.
+     */
+    public Mono<Resource> getCvFile(Long profileId) {
+        return candidateProfileRepository.findById(profileId)
+                .map(profile -> new FileSystemResource(profile.getCvFilePath()));
     }
 }
