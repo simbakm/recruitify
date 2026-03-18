@@ -1,4 +1,4 @@
-package hit400.cleo.recruitify.service.apollo;
+package hit400.cleo.recruitify.service.util;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

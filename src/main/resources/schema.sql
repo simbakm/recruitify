@@ -103,3 +103,21 @@ CREATE TABLE IF NOT EXISTS interviews (
 CREATE INDEX IF NOT EXISTS idx_interviews_application_id ON interviews(application_id);
 CREATE INDEX IF NOT EXISTS idx_interviews_candidate_id ON interviews(candidate_id);
 CREATE INDEX IF NOT EXISTS idx_interviews_status ON interviews(status);
+
+-- Create applications table
+CREATE TABLE IF NOT EXISTS applications (
+                            id BIGSERIAL PRIMARY KEY,
+                            vacancy_id BIGINT NOT NULL REFERENCES vacancies(id) ON DELETE CASCADE,
+                            candidate_id BIGINT,
+                            candidate_name VARCHAR(255) NOT NULL,
+                            candidate_avatar VARCHAR(500),
+                            applied_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            status VARCHAR(50) NOT NULL,
+                            resume_url VARCHAR(1000),
+                            cover_letter TEXT,
+                            position VARCHAR(255) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_applications_vacancy_id ON applications(vacancy_id);
+CREATE INDEX IF NOT EXISTS idx_applications_candidate_id ON applications(candidate_id);
+CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);

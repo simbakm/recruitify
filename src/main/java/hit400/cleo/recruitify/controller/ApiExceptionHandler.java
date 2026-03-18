@@ -1,7 +1,7 @@
 package hit400.cleo.recruitify.controller;
 
 import hit400.cleo.recruitify.dto.ApiErrorDto;
-import hit400.cleo.recruitify.service.apollo.ApolloApiException;
+import hit400.cleo.recruitify.service.leadiq.LeadIQApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,8 +18,8 @@ public class ApiExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, ex.getMessage(), exchange);
     }
 
-    @ExceptionHandler(ApolloApiException.class)
-    public ResponseEntity<ApiErrorDto> apolloError(ApolloApiException ex, ServerWebExchange exchange) {
+    @ExceptionHandler(LeadIQApiException.class)
+    public ResponseEntity<ApiErrorDto> leadiqError(LeadIQApiException ex, ServerWebExchange exchange) {
         HttpStatus status = HttpStatus.resolve(ex.getStatus().value());
         if (status == null) status = HttpStatus.BAD_GATEWAY;
         String message = ex.getResponseBody() == null || ex.getResponseBody().isBlank() ? ex.getMessage() : ex.getResponseBody();

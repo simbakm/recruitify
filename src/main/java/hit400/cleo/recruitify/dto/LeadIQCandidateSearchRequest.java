@@ -1,9 +1,9 @@
 package hit400.cleo.recruitify.dto;
-
+ 
 import java.util.List;
 import java.util.Map;
-
-public record ApolloCandidateSearchRequest(
+ 
+public record LeadIQCandidateSearchRequest(
         String keywords,
         List<String> requiredSkills,
         List<String> optionalSkills,
@@ -12,12 +12,11 @@ public record ApolloCandidateSearchRequest(
         Integer minYearsExperience,
         Boolean requireAllRequiredSkills,
         Integer maxResults,
-        ApolloOverrides apollo
+        LeadIQOverrides leadiq
 ) {
-    public record ApolloOverrides(
-            Integer page,
-            Integer perPage,
+    public record LeadIQOverrides(
+            Integer skip,
+            Integer limit,
             Map<String, Object> extraFilters
     ) {}
 }
-

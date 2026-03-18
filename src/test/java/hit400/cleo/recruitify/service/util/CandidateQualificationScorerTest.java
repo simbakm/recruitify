@@ -1,4 +1,4 @@
-package hit400.cleo.recruitify.service.apollo;
+package hit400.cleo.recruitify.service.util;
 
 import org.junit.jupiter.api.Test;
 
