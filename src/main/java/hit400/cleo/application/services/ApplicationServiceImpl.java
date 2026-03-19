@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 
-@Service
+@Service("jobApplicationServiceImpl")
 @RequiredArgsConstructor
 public class ApplicationServiceImpl implements ApplicationService {
 
