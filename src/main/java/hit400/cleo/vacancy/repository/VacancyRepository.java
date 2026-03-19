@@ -11,6 +11,13 @@ public interface VacancyRepository extends R2dbcRepository<Vacancy, Long> {
 
     Flux<Vacancy> findByCompanyId(Integer companyId);
 
+    @Query("""
+            SELECT * FROM vacancies
+            WHERE company_id = :companyId
+            ORDER BY posted_date DESC
+            """)
+    Flux<Vacancy> findByCompanyIdOrderByPostedDateDesc(Integer companyId);
+
     Flux<Vacancy> findByStatus(String status);
 
     Flux<Vacancy> findByCategory(String category);

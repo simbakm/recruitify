@@ -1,6 +1,8 @@
 package hit400.cleo.recruitify.controller;
 
 import hit400.cleo.recruitify.dto.ApiErrorDto;
+import hit400.cleo.recruitify.exception.ConflictException;
+import hit400.cleo.recruitify.exception.NotFoundException;
 import hit400.cleo.recruitify.service.leadiq.LeadIQApiException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -37,6 +39,16 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiErrorDto> badInput(ServerWebInputException ex, ServerWebExchange exchange) {
         String message = ex.getReason() == null || ex.getReason().isBlank() ? "Invalid request body" : ex.getReason();
         return error(HttpStatus.BAD_REQUEST, message, exchange);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiErrorDto> notFound(NotFoundException ex, ServerWebExchange exchange) {
+        return error(HttpStatus.NOT_FOUND, ex.getMessage(), exchange);
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiErrorDto> conflict(ConflictException ex, ServerWebExchange exchange) {
+        return error(HttpStatus.CONFLICT, ex.getMessage(), exchange);
     }
 
     private static ResponseEntity<ApiErrorDto> error(HttpStatus status, String message, ServerWebExchange exchange) {

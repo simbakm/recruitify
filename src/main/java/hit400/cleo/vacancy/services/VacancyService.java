@@ -13,6 +13,8 @@ public interface VacancyService {
 
     Flux<VacancyResponse> getAll();
 
+    Flux<VacancyResponse> getByCompanyId(Integer companyId);
+
     Flux<VacancyResponse> getRecommended(Long profileId);
 
     Mono<VacancyResponse> update(Long id, VacancyRequest request);

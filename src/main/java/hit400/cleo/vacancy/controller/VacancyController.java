@@ -32,8 +32,10 @@ public class VacancyController {
     }
 
     @GetMapping
-    public Flux<VacancyResponse> getAll() {
-        return vacancyService.getAll();
+    public Flux<VacancyResponse> getAll(@RequestParam(required = false) Integer companyId) {
+        return companyId != null
+                ? vacancyService.getByCompanyId(companyId)
+                : vacancyService.getAll();
     }
 
     @GetMapping("/recommended/{profileId}")

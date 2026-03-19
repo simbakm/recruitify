@@ -3,6 +3,7 @@ package hit400.cleo.recruitify.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hit400.cleo.recruitify.dto.CvUploadRequest;
+import hit400.cleo.recruitify.exception.NotFoundException;
 import hit400.cleo.recruitify.model.CandidateProfile;
 import hit400.cleo.recruitify.repository.CandidateProfileRepository;
 import jakarta.annotation.PostConstruct;
@@ -85,6 +86,40 @@ public class CvExtractionService {
                 )
                 .doOnSuccess(profile -> log.info("Saved successfully: profile id={} email={}", profile.getId(), profile.getEmail()))
                 .doOnError(error -> log.error("Failed to process CV: {}", error.getMessage()));
+    }
+
+    /**
+     * Update an existing profile by id using data extracted from the CV.
+     * This will NOT create a new profile.
+     */
+    public Mono<CandidateProfile> extractAndUpdateProfile(Long profileId, FilePart cvFilePart) {
+        if (profileId == null) {
+            return Mono.error(new IllegalArgumentException("profileId is required"));
+        }
+        if (cvFilePart == null) {
+            return Mono.error(new IllegalArgumentException("cvFile is required"));
+        }
+
+        return candidateProfileRepository.findById(profileId)
+                .switchIfEmpty(Mono.error(new NotFoundException("Profile not found for id: " + profileId)))
+                .flatMap(existing ->
+                        saveCvFile(cvFilePart)
+                                .flatMap(filePath ->
+                                        callPythonMicroservice(filePath)
+                                                .flatMap(this::parseStructuredData)
+                                                .flatMap(extracted -> {
+                                                    existing.setNew(false);
+                                                    mergeExtracted(existing, extracted);
+                                                    existing.setCvFilePath(filePath);
+                                                    if (existing.getCreatedAt() == null) {
+                                                        existing.setCreatedAt(LocalDateTime.now());
+                                                    }
+                                                    return candidateProfileRepository.save(existing);
+                                                })
+                                )
+                )
+                .doOnSuccess(profile -> log.info("Updated profile from CV: profile id={} email={}", profile.getId(), profile.getEmail()))
+                .doOnError(error -> log.error("Failed to update profile from CV: {}", error.getMessage()));
     }
 
     /**
@@ -341,33 +376,64 @@ public class CvExtractionService {
 
     private Mono<CandidateProfile> upsertByEmail(CandidateProfile incoming) {
         if (incoming.getEmail() == null || incoming.getEmail().isBlank()) {
-            if (incoming.getCreatedAt() == null) incoming.setCreatedAt(LocalDateTime.now());
-            if (incoming.getName() == null || incoming.getName().isBlank()) {
-                return Mono.error(new IllegalArgumentException("name is required"));
-            }
-            incoming.setNew(true);
-            return candidateProfileRepository.save(incoming);
+            return Mono.error(new IllegalArgumentException("email is required (create account first)"));
         }
 
-        return candidateProfileRepository.findByEmail(incoming.getEmail())
+        final String normalizedEmail = incoming.getEmail().trim().toLowerCase();
+        incoming.setEmail(normalizedEmail);
+
+        return candidateProfileRepository.findByEmailIgnoreCase(normalizedEmail)
+                .switchIfEmpty(Mono.error(new NotFoundException("Account not found for email: " + normalizedEmail + ". Create account first.")))
                 .flatMap(existing -> {
                     incoming.setId(existing.getId());
                     incoming.setNew(false);
                     if (incoming.getName() == null || incoming.getName().isBlank()) {
                         incoming.setName(existing.getName());
                     }
-                    if (incoming.getCreatedAt() == null && existing.getCreatedAt() != null) {
-                        incoming.setCreatedAt(existing.getCreatedAt());
+                    if (incoming.getCreatedAt() == null) {
+                        incoming.setCreatedAt(existing.getCreatedAt() != null ? existing.getCreatedAt() : LocalDateTime.now());
                     }
                     return candidateProfileRepository.save(incoming);
-                })
-                .switchIfEmpty(Mono.defer(() -> {
-                    if (incoming.getCreatedAt() == null) incoming.setCreatedAt(LocalDateTime.now());
-                    if (incoming.getName() == null || incoming.getName().isBlank()) {
-                        return Mono.error(new IllegalArgumentException("name is required"));
-                    }
-                    incoming.setNew(true);
-                    return candidateProfileRepository.save(incoming);
-                }));
+                });
+    }
+
+    private static void mergeExtracted(CandidateProfile target, CandidateProfile extracted) {
+        if (extracted == null) return;
+
+        if (extracted.getName() != null
+                && !extracted.getName().isBlank()
+                && !"Unknown Candidate".equalsIgnoreCase(extracted.getName())) {
+            target.setName(extracted.getName());
+        }
+
+        if ((target.getEmail() == null || target.getEmail().isBlank())
+                && extracted.getEmail() != null
+                && !extracted.getEmail().isBlank()) {
+            target.setEmail(extracted.getEmail().trim().toLowerCase());
+        }
+
+        if (extracted.getPhone() != null && !extracted.getPhone().isBlank()) {
+            target.setPhone(extracted.getPhone());
+        }
+
+        if (extracted.getAddress() != null && !extracted.getAddress().isBlank()) {
+            target.setAddress(extracted.getAddress());
+        }
+
+        if (extracted.getObjectives() != null && !extracted.getObjectives().isBlank()) {
+            target.setObjectives(extracted.getObjectives());
+        }
+
+        if (extracted.getSkills() != null && !extracted.getSkills().isEmpty()) {
+            target.setSkills(extracted.getSkills());
+        }
+
+        if (extracted.getExperiences() != null && !extracted.getExperiences().isEmpty()) {
+            target.setExperiences(extracted.getExperiences());
+        }
+
+        if (extracted.getEducations() != null && !extracted.getEducations().isEmpty()) {
+            target.setEducations(extracted.getEducations());
+        }
     }
 }

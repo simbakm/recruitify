@@ -1,7 +1,6 @@
 package hit400.cleo.recruitify.controller;
 
 import hit400.cleo.recruitify.dto.CandidateProfileResponseDto;
-import hit400.cleo.recruitify.dto.CvUploadRequest;
 import hit400.cleo.recruitify.service.CvExtractionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -25,16 +24,13 @@ import org.springframework.core.io.Resource;
 public class CvController {
     private final CvExtractionService extractionService;
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/upload/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<ResponseEntity<CandidateProfileResponseDto>> uploadCV(
+            @PathVariable("id") Long profileId,
             @RequestPart("cvFile") FilePart cvFilePart) {
-
-        CvUploadRequest request = new CvUploadRequest(cvFilePart);
-
-        return extractionService.extractAndSaveProfile(request)
+        return extractionService.extractAndUpdateProfile(profileId, cvFilePart)
                 .map(profile -> {
-                    // Extract objectives if available (you might need to add this field to your entity)
-                    String objectives = null; // You might want to add an objectives field to CandidateProfile
+                    String objectives = profile.getObjectives();
 
                     return ResponseEntity.ok(new CandidateProfileResponseDto(
                             profile.getId(),

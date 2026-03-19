@@ -12,6 +12,9 @@ public interface CandidateProfileRepository extends R2dbcRepository<CandidatePro
 
     Mono<CandidateProfile> findByEmail(String email);
 
+    @Query("SELECT * FROM candidate_profiles WHERE LOWER(email) = LOWER(:email) LIMIT 1")
+    Mono<CandidateProfile> findByEmailIgnoreCase(@Param("email") String email);
+
     @Query("SELECT * FROM candidate_profiles WHERE email = :email")
     Mono<CandidateProfile> findProfileByEmail(@Param("email") String email);
 }

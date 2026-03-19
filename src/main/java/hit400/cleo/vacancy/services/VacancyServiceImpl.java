@@ -53,6 +53,11 @@ public class VacancyServiceImpl implements VacancyService {
     }
 
     @Override
+    public Flux<VacancyResponse> getByCompanyId(Integer companyId) {
+        return vacancyRepository.findByCompanyIdOrderByPostedDateDesc(companyId).map(this::toResponse);
+    }
+
+    @Override
     public Flux<VacancyResponse> getRecommended(Long profileId) {
         return candidateProfileRepository.findById(profileId)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(

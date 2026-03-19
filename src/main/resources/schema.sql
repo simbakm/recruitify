@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS candidate_profiles (
     phone VARCHAR(50),
     address TEXT,
     objectives TEXT,
+    profile_pic TEXT,
     experiences TEXT,
     cv_file_path TEXT,
     educations TEXT,
@@ -25,6 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_candidate_profiles_email ON candidate_profiles(em
 
 -- If the table already existed from an older schema, ensure new columns are present (idempotent).
 ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS objectives TEXT;
+ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS profile_pic TEXT;
 ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS experiences TEXT;
 ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS cv_file_path TEXT;
 ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS educations TEXT;

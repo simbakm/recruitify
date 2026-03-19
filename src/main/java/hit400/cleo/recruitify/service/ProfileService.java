@@ -2,6 +2,8 @@ package hit400.cleo.recruitify.service;
 
 
 import hit400.cleo.recruitify.dto.CandidateProfileRequestDTO;
+import hit400.cleo.recruitify.exception.ConflictException;
+import hit400.cleo.recruitify.exception.NotFoundException;
 import hit400.cleo.recruitify.model.CandidateProfile;
 import hit400.cleo.recruitify.repository.CandidateProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +21,14 @@ import java.time.LocalDateTime;
 public class ProfileService {
 
     private final CandidateProfileRepository repository;
+
+    public Mono<CandidateProfile> findByEmail(String email) {
+        if (email == null) return Mono.empty();
+        final String normalized = email.trim().toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) return Mono.empty();
+        return repository.findByEmailIgnoreCase(normalized)
+                .doOnNext((profile) -> profile.setNew(false));
+    }
 
     public Mono<CandidateProfile> getProfile(Long id) {
         return repository.findById(id);
@@ -27,30 +38,52 @@ public class ProfileService {
         return repository.findAll();
     }
 
-    public Mono<CandidateProfile> createProfile(CandidateProfileRequestDTO dto) {
+    /**
+     * Account creation: minimal record (name + email).
+     * Profile completion should happen via {@link #completeProfile(CandidateProfileRequestDTO)}.
+     */
+    public Mono<CandidateProfile> createAccount(CandidateProfileRequestDTO dto) {
+        if (dto.email() == null || dto.email().isBlank()) {
+            return Mono.error(new IllegalArgumentException("email is required"));
+        }
+        if (dto.name() == null || dto.name().isBlank()) {
+            return Mono.error(new IllegalArgumentException("name is required"));
+        }
+
+        final String normalizedEmail = dto.email().trim().toLowerCase(Locale.ROOT);
+
+        return repository.findByEmailIgnoreCase(normalizedEmail)
+                .flatMap(existing -> Mono.<CandidateProfile>error(new ConflictException("Account already exists for email: " + normalizedEmail)))
+                .switchIfEmpty(Mono.defer(() -> {
+                    CandidateProfile profile = new CandidateProfile();
+                    profile.setNew(true);
+                    profile.setName(dto.name());
+                    profile.setEmail(normalizedEmail);
+                    profile.setCreatedAt(LocalDateTime.now());
+                    return repository.save(profile);
+                }))
+                .doOnSuccess(saved -> log.info("Created account: profile id={} email={}", saved.getId(), saved.getEmail()));
+    }
+
+    /**
+     * Profile completion/update: requires an existing account (candidate_profiles row).
+     */
+    public Mono<CandidateProfile> completeProfile(CandidateProfileRequestDTO dto) {
         if (dto.email() == null || dto.email().isBlank()) {
             return Mono.error(new IllegalArgumentException("email is required"));
         }
 
-        return repository.findByEmail(dto.email())
+        final String normalizedEmail = dto.email().trim().toLowerCase(Locale.ROOT);
+
+        return repository.findByEmailIgnoreCase(normalizedEmail)
+                .switchIfEmpty(Mono.error(new NotFoundException("Account not found for email: " + normalizedEmail + ". Create account first.")))
                 .flatMap(existing -> {
                     existing.setNew(false);
                     applyUpdates(existing, dto);
                     if (existing.getCreatedAt() == null) existing.setCreatedAt(LocalDateTime.now());
                     return repository.save(existing);
                 })
-                .switchIfEmpty(Mono.defer(() -> {
-                    if (dto.name() == null || dto.name().isBlank()) {
-                        return Mono.error(new IllegalArgumentException("name is required"));
-                    }
-                    CandidateProfile profile = new CandidateProfile();
-                    profile.setNew(true);
-                    profile.setEmail(dto.email());
-                    profile.setCreatedAt(LocalDateTime.now());
-                    applyUpdates(profile, dto);
-                    return repository.save(profile);
-                }))
-                .doOnSuccess(saved -> log.info("Saved successfully: profile id={}", saved.getId()));
+                .doOnSuccess(saved -> log.info("Completed profile: profile id={} email={}", saved.getId(), saved.getEmail()));
     }
 
     public Mono<CandidateProfile> updateProfile(Long id, CandidateProfileRequestDTO dto) {

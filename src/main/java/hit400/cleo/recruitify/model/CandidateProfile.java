@@ -1,5 +1,6 @@
 package hit400.cleo.recruitify.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,12 +71,15 @@ public class CandidateProfile implements Persistable<Long> {
 
     // Store as JSON strings in database
     @Column("experiences")
+    @JsonIgnore
     private String experiencesJson;
 
     @Column("educations")
+    @JsonIgnore
     private String educationsJson;
 
     @Column("skills")
+    @JsonIgnore
     private String skillsJson;
 
     @Column("cv_file_path")
@@ -85,6 +89,7 @@ public class CandidateProfile implements Persistable<Long> {
     private LocalDateTime createdAt;
 
     @Transient
+    @JsonIgnore
     private boolean isNew = true;
 
     @Transient
