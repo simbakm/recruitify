@@ -27,14 +27,7 @@ public class ProfileController {
                 .map(saved -> ResponseEntity.status(HttpStatus.CREATED).body(saved));
     }
 
-    /**
-     * Step 2: profile completion (requires existing account).
-     */
-    @PostMapping
-    public Mono<ResponseEntity<CandidateProfile>> createProfile(@RequestBody CandidateProfileRequestDTO dto) {
-        return profileService.completeProfile(dto)
-                .map(ResponseEntity::ok);
-    }
+   
 
     @GetMapping("/{id}")
     public Mono<ResponseEntity<CandidateProfile>> getProfile(@PathVariable Long id) {

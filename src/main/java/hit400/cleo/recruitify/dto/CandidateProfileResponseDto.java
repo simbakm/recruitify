@@ -13,7 +13,8 @@ public record CandidateProfileResponseDto(
         List<EducationDto> educations,
         List<String> skills,
         String objectives,  // Added objectives field
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        List<String> warnings
 ) {
     public record ExperienceDto(
             String jobTitle,

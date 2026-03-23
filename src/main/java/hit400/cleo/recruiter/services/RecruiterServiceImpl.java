@@ -5,7 +5,8 @@ import hit400.cleo.recruiter.dtos.RecruiterResponse;
 import hit400.cleo.recruiter.model.Recruiter;
 import hit400.cleo.recruiter.repository.RecruiterRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -14,41 +15,51 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class RecruiterServiceImpl implements RecruiterService {
+
+    private static final Logger log = LogManager.getLogger(RecruiterServiceImpl.class);
 
     private final RecruiterRepository recruiterRepository;
 
     @Override
     public Mono<RecruiterResponse> create(RecruiterRequest request) {
+        log.info("Creating recruiter");
         Recruiter recruiter = applyRequest(request, new Recruiter(), true);
         if (recruiter.getCreatedAt() == null) recruiter.setCreatedAt(LocalDateTime.now());
         return recruiterRepository.save(recruiter)
                 .map(this::toResponse)
-                .doOnSuccess(saved -> log.info("Saved successfully: recruiter id={}", saved.getId()));
+                .doOnSuccess(saved -> log.info("Saved successfully: recruiter id={}", saved.getId()))
+                .doOnError(error -> log.error("Failed to create recruiter", error));
     }
 
     @Override
     public Mono<RecruiterResponse> getById(Long id) {
+        log.info("Fetching recruiter: id={}", id);
         return recruiterRepository.findById(id).map(this::toResponse);
     }
 
     @Override
     public Flux<RecruiterResponse> getAll() {
+        log.info("Fetching all recruiters");
         return recruiterRepository.findAll().map(this::toResponse);
     }
 
     @Override
     public Mono<RecruiterResponse> update(Long id, RecruiterRequest request) {
+        log.info("Updating recruiter: id={}", id);
         return recruiterRepository.findById(id)
                 .flatMap(existing -> recruiterRepository.save(applyRequest(request, existing, false)))
                 .map(this::toResponse)
-                .doOnSuccess(saved -> log.info("Saved successfully: recruiter id={}", saved.getId()));
+                .doOnSuccess(saved -> log.info("Saved successfully: recruiter id={}", saved.getId()))
+                .doOnError(error -> log.error("Failed to update recruiter id={}", id, error));
     }
 
     @Override
     public Mono<Void> delete(Long id) {
-        return recruiterRepository.deleteById(id);
+        log.info("Deleting recruiter: id={}", id);
+        return recruiterRepository.deleteById(id)
+                .doOnSuccess(ignored -> log.info("Deleted recruiter: id={}", id))
+                .doOnError(error -> log.error("Failed to delete recruiter id={}", id, error));
     }
 
     private Recruiter applyRequest(RecruiterRequest request, Recruiter target, boolean isCreate) {

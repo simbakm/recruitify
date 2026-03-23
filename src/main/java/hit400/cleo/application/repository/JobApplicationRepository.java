@@ -5,8 +5,8 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 
-@Repository("jobApplicationRepository")
-public interface ApplicationRepository extends R2dbcRepository<Application, Long> {
+@Repository
+public interface JobApplicationRepository extends R2dbcRepository<Application, Long> {
 
     Flux<Application> findByCandidateId(Long candidateId);
 

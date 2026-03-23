@@ -39,6 +39,12 @@ public class Application {
     @Column("status")
     private ApplicationStatus status;
 
+    @Column("score")
+    private Double score;
+
+    @Column("threshold")
+    private Double threshold;
+
     @Column("resume_url")
     private String resumeUrl;
 

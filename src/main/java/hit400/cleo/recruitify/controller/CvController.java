@@ -24,12 +24,16 @@ import org.springframework.core.io.Resource;
 public class CvController {
     private final CvExtractionService extractionService;
 
-    @PostMapping(value = "/upload/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<ResponseEntity<CandidateProfileResponseDto>> uploadCV(
-            @PathVariable("id") Long profileId,
-            @RequestPart("cvFile") FilePart cvFilePart) {
+            @RequestPart(value = "profileId", required = false) Long profileId,
+            @RequestPart(value = "cvFile", required = false) FilePart cvFilePart) {
+        if (profileId == null || cvFilePart == null) {
+            return Mono.just(ResponseEntity.badRequest().build());
+        }
         return extractionService.extractAndUpdateProfile(profileId, cvFilePart)
-                .map(profile -> {
+                .map(result -> {
+                    var profile = result.profile();
                     String objectives = profile.getObjectives();
 
                     return ResponseEntity.ok(new CandidateProfileResponseDto(
@@ -53,11 +57,11 @@ public class CvController {
                             )).toList(),
                             profile.getSkills(),
                             objectives,  // Add the objectives field
-                            profile.getCreatedAt()
+                            profile.getCreatedAt(),
+                            result.warnings()
                     ));
                 });
     }
-
 
     @GetMapping("/view/{id}")
     @Operation(

@@ -59,6 +59,9 @@ public class Vacancy {
     @Column("posted_date")
     private LocalDateTime postedDate;
 
+    @Column("closing_date")
+    private LocalDateTime closingDate;
+
     @Column("company_id")
     private Integer companyId;
 

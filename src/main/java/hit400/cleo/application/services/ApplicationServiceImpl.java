@@ -5,12 +5,14 @@ import hit400.cleo.application.dtos.ApplicationResponse;
 import hit400.cleo.application.dtos.ApplicationStatusUpdateRequest;
 import hit400.cleo.application.model.Application;
 import hit400.cleo.application.model.enums.ApplicationStatus;
-import hit400.cleo.application.repository.ApplicationRepository;
+import hit400.cleo.application.repository.JobApplicationRepository;
 import hit400.cleo.recruitify.model.CandidateProfile;
 import hit400.cleo.recruitify.repository.CandidateProfileRepository;
 import hit400.cleo.vacancy.model.Vacancy;
 import hit400.cleo.vacancy.repository.VacancyRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,12 +25,15 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class ApplicationServiceImpl implements ApplicationService {
 
-    private final ApplicationRepository applicationRepository;
+    private static final Logger log = LogManager.getLogger(ApplicationServiceImpl.class);
+
+    private final JobApplicationRepository applicationRepository;
     private final CandidateProfileRepository candidateProfileRepository;
     private final VacancyRepository vacancyRepository;
 
     @Override
     public Mono<ApplicationResponse> create(Long vacancyId, Long candidateId, ApplicationRequest request) {
+        log.info("Creating application: vacancyId={}, candidateId={}", vacancyId, candidateId);
         if (vacancyId == null || candidateId == null) {
             return Mono.error(new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "vacancyId and candidateId are required"));
@@ -71,21 +76,28 @@ public class ApplicationServiceImpl implements ApplicationService {
                             .build();
 
                     return applicationRepository.save(application).map(this::toResponse);
-                });
+                })
+                .doOnSuccess(saved -> log.info("Application created: id={} vacancyId={} candidateId={}",
+                        saved.getId(), saved.getVacancyId(), saved.getCandidateId()))
+                .doOnError(error -> log.error("Failed to create application: vacancyId={} candidateId={}",
+                        vacancyId, candidateId, error));
     }
 
     @Override
     public Flux<ApplicationResponse> getByCandidateId(Long candidateId) {
+        log.info("Fetching applications by candidateId={}", candidateId);
         return applicationRepository.findByCandidateId(candidateId).map(this::toResponse);
     }
 
     @Override
     public Flux<ApplicationResponse> getByVacancyId(Long vacancyId) {
+        log.info("Fetching applications by vacancyId={}", vacancyId);
         return applicationRepository.findByVacancyId(vacancyId).map(this::toResponse);
     }
 
     @Override
     public Mono<ApplicationResponse> updateStatus(Long applicationId, ApplicationStatusUpdateRequest request) {
+        log.info("Updating application status: applicationId={}", applicationId);
         if (request == null || request.getStatus() == null) {
             return Mono.error(new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -99,7 +111,10 @@ public class ApplicationServiceImpl implements ApplicationService {
                     existing.setStatus(request.getStatus());
                     return applicationRepository.save(existing);
                 })
-                .map(this::toResponse);
+                .map(this::toResponse)
+                .doOnSuccess(saved -> log.info("Application status updated: id={} status={}",
+                        saved.getId(), saved.getStatus()))
+                .doOnError(error -> log.error("Failed to update application status: id={}", applicationId, error));
     }
 
     private ApplicationResponse toResponse(Application application) {
@@ -111,6 +126,8 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .candidateAvatar(application.getCandidateAvatar())
                 .appliedDate(application.getAppliedDate())
                 .status(application.getStatus())
+                .score(application.getScore())
+                .threshold(application.getThreshold())
                 .resumeUrl(application.getResumeUrl())
                 .coverLetter(application.getCoverLetter())
                 .position(application.getPosition())

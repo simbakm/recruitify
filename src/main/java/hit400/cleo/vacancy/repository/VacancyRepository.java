@@ -26,6 +26,14 @@ public interface VacancyRepository extends R2dbcRepository<Vacancy, Long> {
 
     @Query("""
             SELECT * FROM vacancies
+            WHERE status <> :status
+              AND closing_date IS NOT NULL
+              AND closing_date <= :now
+            """)
+    Flux<Vacancy> findDueToClose(String status, java.time.LocalDateTime now);
+
+    @Query("""
+            SELECT * FROM vacancies
             WHERE title ILIKE :searchTerm
                OR category ILIKE :searchTerm
                OR location ILIKE :searchTerm

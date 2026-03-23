@@ -5,47 +5,58 @@ import hit400.cleo.candidate.dtos.InterviewResponse;
 import hit400.cleo.candidate.models.Interview;
 import hit400.cleo.candidate.repositories.CandidateInterviewRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class CandidateInterviewServiceImpl implements CandidateInterviewService {
+
+    private static final Logger log = LogManager.getLogger(CandidateInterviewServiceImpl.class);
 
     private final CandidateInterviewRepository interviewRepository;
 
     @Override
     public Mono<InterviewResponse> create(InterviewRequest request) {
+        log.info("Creating candidate interview");
         Interview interview = applyRequest(request, new Interview());
         return interviewRepository.save(interview)
                 .map(this::toResponse)
-                .doOnSuccess(saved -> log.info("Saved successfully: candidate-interview id={}", saved.getId()));
+                .doOnSuccess(saved -> log.info("Saved successfully: candidate-interview id={}", saved.getId()))
+                .doOnError(error -> log.error("Failed to create candidate interview", error));
     }
 
     @Override
     public Mono<InterviewResponse> getById(Long id) {
+        log.info("Fetching candidate interview: id={}", id);
         return interviewRepository.findById(id).map(this::toResponse);
     }
 
     @Override
     public Flux<InterviewResponse> getAll() {
+        log.info("Fetching all candidate interviews");
         return interviewRepository.findAll().map(this::toResponse);
     }
 
     @Override
     public Mono<InterviewResponse> update(Long id, InterviewRequest request) {
+        log.info("Updating candidate interview: id={}", id);
         return interviewRepository.findById(id)
                 .flatMap(existing -> interviewRepository.save(applyRequest(request, existing)))
                 .map(this::toResponse)
-                .doOnSuccess(saved -> log.info("Saved successfully: candidate-interview id={}", saved.getId()));
+                .doOnSuccess(saved -> log.info("Saved successfully: candidate-interview id={}", saved.getId()))
+                .doOnError(error -> log.error("Failed to update candidate interview id={}", id, error));
     }
 
     @Override
     public Mono<Void> delete(Long id) {
-        return interviewRepository.deleteById(id);
+        log.info("Deleting candidate interview: id={}", id);
+        return interviewRepository.deleteById(id)
+                .doOnSuccess(ignored -> log.info("Deleted candidate interview: id={}", id))
+                .doOnError(error -> log.error("Failed to delete candidate interview id={}", id, error));
     }
 
     private Interview applyRequest(InterviewRequest request, Interview target) {

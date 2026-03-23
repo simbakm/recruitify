@@ -26,6 +26,7 @@ public class VacancyResponse {
     private List<String> requirements;
     private String status;
     private LocalDateTime postedDate;
+    private LocalDateTime closingDate;
     private Integer companyId;
     private Integer applicantCount;
 

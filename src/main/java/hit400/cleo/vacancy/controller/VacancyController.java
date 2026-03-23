@@ -43,6 +43,12 @@ public class VacancyController {
         return vacancyService.getRecommended(profileId);
     }
 
+    @GetMapping("/{id}/close")
+    public Mono<ResponseEntity<Void>> closeAndScore(@PathVariable Long id) {
+        return vacancyService.closeAndScore(id, true)
+                .thenReturn(ResponseEntity.ok().build());
+    }
+
     @PutMapping("/{id}")
     public Mono<ResponseEntity<VacancyResponse>> update(@PathVariable Long id, @RequestBody VacancyRequest request) {
         return vacancyService.update(id, request)

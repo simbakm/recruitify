@@ -6,7 +6,8 @@ import hit400.cleo.recruitify.dto.LeadIQCandidateSearchRequest;
 import hit400.cleo.recruitify.dto.QualifiedCandidateDto;
 import hit400.cleo.recruitify.service.util.CandidateQualificationScorer;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -19,11 +20,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
  
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LeadIQCandidateSearchService {
- 
+
+    private static final Logger log = LogManager.getLogger(LeadIQCandidateSearchService.class);
+
     private final WebClient leadiqWebClient;
     private final LeadIQProperties properties;
     private final ObjectMapper objectMapper;
@@ -31,6 +33,7 @@ public class LeadIQCandidateSearchService {
     private final CandidateQualificationScorer scorer = new CandidateQualificationScorer();
  
     public Mono<List<QualifiedCandidateDto>> searchQualifiedCandidates(LeadIQCandidateSearchRequest request) {
+        log.info("LeadIQ search started");
         if (request == null) {
             return Mono.error(new IllegalArgumentException("Request body is required"));
         }
@@ -84,7 +87,9 @@ public class LeadIQCandidateSearchService {
                 .map(list -> list.stream()
                         .sorted(Comparator.comparingDouble(QualifiedCandidateDto::matchScore).reversed())
                         .limit(limit)
-                        .toList());
+                        .toList())
+                .doOnSuccess(list -> log.info("LeadIQ search completed: results={}", list.size()))
+                .doOnError(error -> log.error("LeadIQ search failed", error));
     }
  
     private Map<String, Object> buildVariables(LeadIQCandidateSearchRequest request, int limit, int skip) {

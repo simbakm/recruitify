@@ -17,6 +17,8 @@ public interface VacancyService {
 
     Flux<VacancyResponse> getRecommended(Long profileId);
 
+    Mono<Void> closeAndScore(Long vacancyId, boolean forceClose);
+
     Mono<VacancyResponse> update(Long id, VacancyRequest request);
 
     Mono<Void> delete(Long id);

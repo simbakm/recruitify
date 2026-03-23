@@ -6,21 +6,53 @@ import hit400.cleo.recruitify.exception.ConflictException;
 import hit400.cleo.recruitify.exception.NotFoundException;
 import hit400.cleo.recruitify.model.CandidateProfile;
 import hit400.cleo.recruitify.repository.CandidateProfileRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ProfileService {
 
+    private static final Logger log = LogManager.getLogger(ProfileService.class);
+
+    private static final String PROFILE_PIC_DIR = "uploads/profile/";
     private final CandidateProfileRepository repository;
+
+    @PostConstruct
+    public void init() {
+        try {
+            Files.createDirectories(Paths.get(PROFILE_PIC_DIR));
+            log.info("Profile picture directory created/verified: {}", PROFILE_PIC_DIR);
+        } catch (IOException e) {
+            log.error("Failed to create profile picture directory", e);
+            throw new RuntimeException("Could not initialize profile picture directory", e);
+        }
+    }
+
+    public Mono<CandidateProfile> getProfile(Long id) {
+        log.info("Fetching profile: id={}", id);
+        return repository.findById(id);
+    }
+
+    public Flux<CandidateProfile> getAllProfiles() {
+        log.info("Fetching all profiles");
+        return repository.findAll();
+    }
 
     public Mono<CandidateProfile> findByEmail(String email) {
         if (email == null) return Mono.empty();
@@ -30,18 +62,7 @@ public class ProfileService {
                 .doOnNext((profile) -> profile.setNew(false));
     }
 
-    public Mono<CandidateProfile> getProfile(Long id) {
-        return repository.findById(id);
-    }
 
-    public Flux<CandidateProfile> getAllProfiles() {
-        return repository.findAll();
-    }
-
-    /**
-     * Account creation: minimal record (name + email).
-     * Profile completion should happen via {@link #completeProfile(CandidateProfileRequestDTO)}.
-     */
     public Mono<CandidateProfile> createAccount(CandidateProfileRequestDTO dto) {
         if (dto.email() == null || dto.email().isBlank()) {
             return Mono.error(new IllegalArgumentException("email is required"));
@@ -59,34 +80,20 @@ public class ProfileService {
                     profile.setNew(true);
                     profile.setName(dto.name());
                     profile.setEmail(normalizedEmail);
+                    if (dto.phone() != null && !dto.phone().isBlank()) {
+                        profile.setPhone(dto.phone());
+                    }
+                    if (dto.address() != null && !dto.address().isBlank()) {
+                        profile.setAddress(dto.address());
+                    }
                     profile.setCreatedAt(LocalDateTime.now());
                     return repository.save(profile);
                 }))
                 .doOnSuccess(saved -> log.info("Created account: profile id={} email={}", saved.getId(), saved.getEmail()));
     }
 
-    /**
-     * Profile completion/update: requires an existing account (candidate_profiles row).
-     */
-    public Mono<CandidateProfile> completeProfile(CandidateProfileRequestDTO dto) {
-        if (dto.email() == null || dto.email().isBlank()) {
-            return Mono.error(new IllegalArgumentException("email is required"));
-        }
-
-        final String normalizedEmail = dto.email().trim().toLowerCase(Locale.ROOT);
-
-        return repository.findByEmailIgnoreCase(normalizedEmail)
-                .switchIfEmpty(Mono.error(new NotFoundException("Account not found for email: " + normalizedEmail + ". Create account first.")))
-                .flatMap(existing -> {
-                    existing.setNew(false);
-                    applyUpdates(existing, dto);
-                    if (existing.getCreatedAt() == null) existing.setCreatedAt(LocalDateTime.now());
-                    return repository.save(existing);
-                })
-                .doOnSuccess(saved -> log.info("Completed profile: profile id={} email={}", saved.getId(), saved.getEmail()));
-    }
-
     public Mono<CandidateProfile> updateProfile(Long id, CandidateProfileRequestDTO dto) {
+        log.info("Updating profile: id={}", id);
         return repository.findById(id)
                 .flatMap(profile -> {
                     // Mark as not new so that save() performs an UPDATE
@@ -101,11 +108,39 @@ public class ProfileService {
 
                     return repository.save(profile);
                 })
-                .doOnSuccess(saved -> log.info("Saved successfully: profile id={}", saved.getId()));
+                .doOnSuccess(saved -> log.info("Saved successfully: profile id={}", saved.getId()))
+                .doOnError(error -> log.error("Failed to update profile id={}", id, error));
     }
 
     public Mono<Void> deleteProfile(Long id) {
-        return repository.deleteById(id);
+        log.info("Deleting profile: id={}", id);
+        return repository.deleteById(id)
+                .doOnSuccess(ignored -> log.info("Deleted profile: id={}", id))
+                .doOnError(error -> log.error("Failed to delete profile id={}", id, error));
+    }
+
+    public Mono<CandidateProfile> updateProfileAvatar(Long id, FilePart filePart) {
+        log.info("Uploading profile avatar: id={}", id);
+        if (filePart == null) {
+            return Mono.error(new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "profilePic file is required"));
+        }
+
+        return repository.findById(id)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Candidate profile not found")))
+                .flatMap(profile -> {
+                    profile.setNew(false);
+                    String filename = System.currentTimeMillis() + "_" + filePart.filename();
+                    Path path = Paths.get(PROFILE_PIC_DIR + filename);
+                    return filePart.transferTo(path)
+                            .then(Mono.defer(() -> {
+                                profile.setProfilePic(path.toString());
+                                return repository.save(profile);
+                            }));
+                })
+                .doOnSuccess(saved -> log.info("Updated profile avatar: id={}", saved.getId()))
+                .doOnError(error -> log.error("Failed to update profile avatar: id={}", id, error));
     }
 
     private void applyUpdates(CandidateProfile profile, CandidateProfileRequestDTO dto) {

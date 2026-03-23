@@ -11,7 +11,8 @@ import hit400.cleo.recruiter.repository.CompanyBenefitRepository;
 import hit400.cleo.recruiter.repository.CompanyRepository;
 import hit400.cleo.recruitify.model.enums.Industry;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -21,8 +22,9 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class CompanyService {
+
+    private static final Logger log = LogManager.getLogger(CompanyService.class);
 
     private final CompanyRepository companyRepository;
     private final CompanyBenefitRepository companyBenefitRepository;
@@ -32,6 +34,7 @@ public class CompanyService {
      * Create a new company
      */
     public Mono<CompanyResponseDTO> createCompany(CompanyRequestDTO requestDTO) {
+        log.info("Creating company");
         return Mono.fromCallable(() -> Company.builder()
                 .name(requestDTO.getName())
                 .logoUrl(requestDTO.getLogoUrl())
@@ -51,13 +54,15 @@ public class CompanyService {
                         )
                 )
                 .flatMap(this::companyToResponseDTO)
-                .doOnSuccess(dto -> log.info("Saved successfully: company id={}", dto.getId()));
+                .doOnSuccess(dto -> log.info("Saved successfully: company id={}", dto.getId()))
+                .doOnError(error -> log.error("Failed to create company", error));
     }
 
     /**
      * Get company by ID
      */
     public Mono<CompanyResponseDTO> getCompanyById(Integer id) {
+        log.info("Fetching company: id={}", id);
         return companyRepository.findById(id)
                 .flatMap(this::companyToResponseDTO);
     }
@@ -66,6 +71,7 @@ public class CompanyService {
      * Get all companies
      */
     public Flux<CompanyResponseDTO> getAllCompanies() {
+        log.info("Fetching all companies");
         return companyRepository.findAll()
                 .flatMap(this::companyToResponseDTO);
     }
@@ -74,6 +80,7 @@ public class CompanyService {
      * Search companies by term
      */
     public Flux<CompanyResponseDTO> searchCompanies(String searchTerm) {
+        log.info("Searching companies: term={}", searchTerm);
         return companyRepository.searchCompanies("%" + searchTerm + "%")
                 .flatMap(this::companyToResponseDTO);
     }
@@ -82,6 +89,7 @@ public class CompanyService {
      * Get companies by industry
      */
     public Flux<CompanyResponseDTO> getCompaniesByIndustry(Industry industry) {
+        log.info("Fetching companies by industry={}", industry);
         return companyRepository.findByIndustry(industry)
                 .flatMap(this::companyToResponseDTO);
     }
@@ -90,6 +98,7 @@ public class CompanyService {
      * Get companies by size
      */
     public Flux<CompanyResponseDTO> getCompaniesBySize(CompanySize size) {
+        log.info("Fetching companies by size={}", size);
         return companyRepository.findBySize(size)
                 .flatMap(this::companyToResponseDTO);
     }
@@ -98,6 +107,7 @@ public class CompanyService {
      * Update company
      */
     public Mono<CompanyResponseDTO> updateCompany(Integer id, CompanyRequestDTO requestDTO) {
+        log.info("Updating company: id={}", id);
 
         return companyRepository.findById(id)
                 .flatMap(company -> {
@@ -128,15 +138,19 @@ public class CompanyService {
                             );
                 })
                 .flatMap(this::companyToResponseDTO)
-                .doOnSuccess(dto -> log.info("Saved successfully: company id={}", dto.getId()));
+                .doOnSuccess(dto -> log.info("Saved successfully: company id={}", dto.getId()))
+                .doOnError(error -> log.error("Failed to update company id={}", id, error));
     }
 
     /**
      * Delete company
      */
     public Mono<Void> deleteCompany(Integer id) {
+        log.info("Deleting company: id={}", id);
         return companyBenefitRepository.deleteByCompanyId(id)
-                .then(companyRepository.deleteById(id));
+                .then(companyRepository.deleteById(id))
+                .doOnSuccess(ignored -> log.info("Deleted company: id={}", id))
+                .doOnError(error -> log.error("Failed to delete company id={}", id, error));
     }
 
     /**

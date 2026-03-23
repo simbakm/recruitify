@@ -21,6 +21,8 @@ public class ApplicationResponse {
     private String candidateAvatar;
     private LocalDateTime appliedDate;
     private ApplicationStatus status;
+    private Double score;
+    private Double threshold;
     private String resumeUrl;
     private String coverLetter;
     private String position;

@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS candidate_profiles (
     phone VARCHAR(50),
     address TEXT,
     objectives TEXT,
-    profile_pic TEXT,
     experiences TEXT,
     cv_file_path TEXT,
     educations TEXT,
@@ -18,28 +17,12 @@ CREATE TABLE IF NOT EXISTS candidate_profiles (
     salary_min INTEGER,
     salary_max INTEGER,
     salary_currency VARCHAR(10),
+    closing_date TIMESTAMP,
     skills TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
 CREATE INDEX IF NOT EXISTS idx_candidate_profiles_email ON candidate_profiles(email);
-
--- If the table already existed from an older schema, ensure new columns are present (idempotent).
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS objectives TEXT;
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS profile_pic TEXT;
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS experiences TEXT;
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS cv_file_path TEXT;
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS educations TEXT;
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS looking_for_job BOOLEAN;
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS desired_job_title VARCHAR(255);
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS desired_category VARCHAR(255);
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS preferred_work_mode VARCHAR(50);
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS preferred_location VARCHAR(255);
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS salary_min INTEGER;
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS salary_max INTEGER;
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS salary_currency VARCHAR(10);
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS skills TEXT;
-ALTER TABLE candidate_profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
 -- create company query
 -- Create the main company table
@@ -82,9 +65,12 @@ CREATE TABLE IF NOT EXISTS vacancies (
                           salary_max INTEGER,
                           salary_currency VARCHAR(10),
                           description TEXT,
+                          score DOUBLE PRECISION,
+                          threshold DOUBLE PRECISION,
                           requirements TEXT,
                           status VARCHAR(50),
                           posted_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          closing_date TIMESTAMP,
                           company_id INTEGER REFERENCES companies(id) ON DELETE SET NULL,
                           applicant_count INTEGER DEFAULT 0
 );
@@ -138,11 +124,13 @@ CREATE TABLE IF NOT EXISTS applications (
                             candidate_id BIGINT,
                             candidate_name VARCHAR(255) NOT NULL,
                             candidate_avatar VARCHAR(500),
-                            applied_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            status VARCHAR(50) NOT NULL,
-                            resume_url VARCHAR(1000),
-                            cover_letter TEXT,
-                            position VARCHAR(255) NOT NULL
+                           applied_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                           status VARCHAR(50) NOT NULL,
+                           score DOUBLE PRECISION,
+                           threshold DOUBLE PRECISION,
+                           resume_url VARCHAR(1000),
+                           cover_letter TEXT,
+                           position VARCHAR(255) NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_applications_vacancy_id ON applications(vacancy_id);
