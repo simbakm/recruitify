@@ -2,7 +2,7 @@ services:
   - type: web
     name: recruitify-prod
     runtime: image
-    image: ghcr.io/REPO_OWNER/REPO_NAME:latest
+    image: ghcr.io/simbakm/recruitify:latest
     healthCheckPath: /healthz
     envVars:
       - key: SPRING_R2DBC_URL
@@ -21,7 +21,7 @@ services:
   - type: web
     name: recruitify-staging
     runtime: image
-    image: ghcr.io/REPO_OWNER/REPO_NAME:latest
+    image: ghcr.io/simbakm/recruitify:latest
     healthCheckPath: /healthz
     envVars:
       - key: SPRING_R2DBC_URL
