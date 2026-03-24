@@ -3,7 +3,7 @@ name: Build and Deploy (Render Image)
 on:
   push:
     branches:
-      - main
+      - master
       - develop
 
 permissions:
@@ -49,7 +49,7 @@ jobs:
           RENDER_DEPLOY_HOOK_URL_STAGING: ${{ secrets.RENDER_DEPLOY_HOOK_URL_STAGING }}
         run: |
           BRANCH="${GITHUB_REF#refs/heads/}"
-          if [ "$BRANCH" = "main" ]; then
+          if [ "$BRANCH" = "master" ]; then
             RENDER_DEPLOY_HOOK_URL="$RENDER_DEPLOY_HOOK_URL_PROD"
           elif [ "$BRANCH" = "develop" ]; then
             RENDER_DEPLOY_HOOK_URL="$RENDER_DEPLOY_HOOK_URL_STAGING"
