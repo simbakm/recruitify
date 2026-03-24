@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
@@ -45,7 +46,8 @@ public class CvExtractionService {
     private final ObjectMapper objectMapper;
 
     // Python microservice URL
-    private static final String PYTHON_MICROSERVICE_URL = "http://localhost:5000/parse";
+    @Value("${app.python.microservice.url}")
+    private String pythonMicroserviceUrl;
 
 
     @PostConstruct
@@ -152,7 +154,7 @@ public class CvExtractionService {
         log.info("Sending PDF to Python microservice: {}", path.getFileName());
 
         WebClient webClient = WebClient.builder()
-                .baseUrl(PYTHON_MICROSERVICE_URL)
+                .baseUrl(pythonMicroserviceUrl)
                 .build();
 
         return webClient.post()

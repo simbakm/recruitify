@@ -13,8 +13,9 @@ target/
 .springBeans
 .sts4-cache
 
-#application propertes
-src/main/resources/application.properties
+# local maven cache and runtime logs
+.m2/
+logs/
 uploads/*
 ### IntelliJ IDEA ###
 .idea
