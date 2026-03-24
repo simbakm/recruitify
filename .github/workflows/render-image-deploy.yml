@@ -63,7 +63,7 @@ jobs:
             exit 1
           fi
           IMAGE_URL="${IMAGE_NAME}:${GITHUB_SHA}"
-          ENCODED_IMAGE_URL=$(printf '%s' "$IMAGE_URL" | jq -sRr @uri)
+          ENCODED_IMAGE_URL=$(python -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['IMAGE_URL'], safe=''))")
           if [[ "$RENDER_DEPLOY_HOOK_URL" == *"?"* ]]; then
             HOOK_URL="${RENDER_DEPLOY_HOOK_URL}&imgURL=${ENCODED_IMAGE_URL}"
           else
