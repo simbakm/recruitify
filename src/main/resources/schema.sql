@@ -56,24 +56,28 @@ CREATE INDEX IF NOT EXISTS idx_company_benefits_company_id ON company_benefits(c
 
 -- Create vacancies table
 CREATE TABLE IF NOT EXISTS vacancies (
-                          id BIGSERIAL PRIMARY KEY,
-                          title VARCHAR(255) NOT NULL,
-                          category VARCHAR(255),
-                          location VARCHAR(255),
-                          employment_type VARCHAR(50),
-                          salary_min INTEGER,
-                          salary_max INTEGER,
-                          salary_currency VARCHAR(10),
-                          description TEXT,
-                          score DOUBLE PRECISION,
-                          threshold DOUBLE PRECISION,
-                          requirements TEXT,
-                          status VARCHAR(50),
-                          posted_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                          closing_date TIMESTAMP,
-                          company_id INTEGER REFERENCES companies(id) ON DELETE SET NULL,
-                          applicant_count INTEGER DEFAULT 0
+                           id BIGSERIAL PRIMARY KEY,
+                           title VARCHAR(255) NOT NULL,
+                           category VARCHAR(255),
+                           location VARCHAR(255),
+                           employment_type VARCHAR(50),
+                           salary_min INTEGER,
+                           salary_max INTEGER,
+                           salary_currency VARCHAR(10),
+                           description TEXT,
+                           score DOUBLE PRECISION,
+                           threshold DOUBLE PRECISION,
+                           requirements TEXT,
+                           status VARCHAR(50),
+                           posted_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                           closing_date TIMESTAMP,
+                           company_id INTEGER REFERENCES companies(id) ON DELETE SET NULL,
+                           applicant_count INTEGER DEFAULT 0
 );
+
+-- If the vacancies table already existed from an older schema, ensure the closing_date column is present
+ALTER TABLE IF EXISTS vacancies
+    ADD COLUMN IF NOT EXISTS closing_date TIMESTAMP;
 
 CREATE INDEX IF NOT EXISTS idx_vacancies_company_id ON vacancies(company_id);
 CREATE INDEX IF NOT EXISTS idx_vacancies_status ON vacancies(status);

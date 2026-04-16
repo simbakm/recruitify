@@ -23,7 +23,9 @@ public class VacancyClosingScheduler {
         log.info("Running vacancy closing scheduler");
         vacancyRepository.findDueToClose("CLOSED", LocalDateTime.now())
                 .flatMap(vacancy -> vacancyService.closeAndScore(vacancy.getId(), false))
-                .doOnError(error -> log.error("Vacancy closing scheduler failed", error))
-                .subscribe();
+                .subscribe(
+                        ignored -> { },
+                        error -> log.error("Vacancy closing scheduler failed", error)
+                );
     }
 }
