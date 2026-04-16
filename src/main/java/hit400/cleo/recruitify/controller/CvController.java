@@ -26,8 +26,8 @@ public class CvController {
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<ResponseEntity<CandidateProfileResponseDto>> uploadCV(
-            @RequestPart(value = "profileId", required = false) Long profileId,
-            @RequestPart(value = "cvFile", required = false) FilePart cvFilePart) {
+            @RequestParam("profileId") Long profileId,
+            @RequestPart("cvFile") FilePart cvFilePart) {
         if (profileId == null || cvFilePart == null) {
             return Mono.just(ResponseEntity.badRequest().build());
         }

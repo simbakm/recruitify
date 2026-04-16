@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS candidate_profiles (
     phone VARCHAR(50),
     address TEXT,
     objectives TEXT,
+    profile_pic VARCHAR(500),
     experiences TEXT,
     cv_file_path TEXT,
     educations TEXT,
@@ -21,6 +22,10 @@ CREATE TABLE IF NOT EXISTS candidate_profiles (
     skills TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+-- Add missing columns for existing databases
+ALTER TABLE candidate_profiles
+    ADD COLUMN IF NOT EXISTS profile_pic VARCHAR(500);
 
 CREATE INDEX IF NOT EXISTS idx_candidate_profiles_email ON candidate_profiles(email);
 

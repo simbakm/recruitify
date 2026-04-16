@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: recruitify-prod
+    runtime: image
+    image: ghcr.io/simbakm/recruitify:latest
+    healthCheckPath: /healthz
+    envVars:
+      - key: SPRING_R2DBC_URL
+        sync: false
+      - key: SPRING_R2DBC_USERNAME
+        fromDatabase:
+          name: recruitify-db-prod
+          property: user
+      - key: SPRING_R2DBC_PASSWORD
+        fromDatabase:
+          name: recruitify-db-prod
+          property: password
+      - key: APP_PYTHON_MICROSERVICE_URL
+        sync: false
+
+  - type: web
+    name: recruitify-staging
+    runtime: image
+    image: ghcr.io/simbakm/recruitify:latest
+    healthCheckPath: /healthz
+    envVars:
+      - key: SPRING_R2DBC_URL
+        sync: false
+      - key: SPRING_R2DBC_USERNAME
+        fromDatabase:
+          name: recruitify-db-staging
+          property: user
+      - key: SPRING_R2DBC_PASSWORD
+        fromDatabase:
+          name: recruitify-db-staging
+          property: password
+      - key: APP_PYTHON_MICROSERVICE_URL
+        sync: false
+
+databases:
+  - name: recruitify-db-prod
+    databaseName: recruitify_db
+
+  - name: recruitify-db-staging
+    databaseName: recruitify_db_staging
