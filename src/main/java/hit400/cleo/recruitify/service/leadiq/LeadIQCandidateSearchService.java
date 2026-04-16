@@ -1,7 +1,7 @@
 package hit400.cleo.recruitify.service.leadiq;
  
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import hit400.cleo.recruitify.dto.LeadIQCandidateSearchRequest;
 import hit400.cleo.recruitify.dto.QualifiedCandidateDto;
 import hit400.cleo.recruitify.service.util.CandidateQualificationScorer;
@@ -82,7 +82,8 @@ public class LeadIQCandidateSearchService {
                                 .defaultIfEmpty("")
                                 .flatMap(responseBody -> Mono.error(new LeadIQApiException(response.statusCode(), responseBody)))
                 )
-                .bodyToMono(JsonNode.class)
+                .bodyToMono(String.class)
+                .flatMap(responseBody -> Mono.fromCallable(() -> objectMapper.readTree(responseBody)))
                 .map(json -> toQualifiedCandidates(json, request))
                 .map(list -> list.stream()
                         .sorted(Comparator.comparingDouble(QualifiedCandidateDto::matchScore).reversed())
@@ -177,7 +178,7 @@ public class LeadIQCandidateSearchService {
                         scoreResult.score(),
                         scoreResult.matchedRequired(),
                         scoreResult.matchedOptional(),
-                        node
+                        objectMapper.convertValue(node, Object.class)
                 ));
             }
         }

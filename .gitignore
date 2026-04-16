@@ -35,3 +35,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Secrets / local overrides (do not commit)
+.env
+src/main/resources/application-local.properties
+src/main/resources/application-local.yml
+src/main/resources/application-local.yaml

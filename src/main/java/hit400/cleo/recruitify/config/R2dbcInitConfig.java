@@ -1,6 +1,7 @@
 package hit400.cleo.recruitify.config;
 
 import io.r2dbc.spi.ConnectionFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -11,6 +12,7 @@ import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator;
 public class R2dbcInitConfig {
 
     @Bean
+    @ConditionalOnProperty(name = "app.r2dbc.init.enabled", havingValue = "true", matchIfMissing = true)
     public ConnectionFactoryInitializer connectionFactoryInitializer(ConnectionFactory connectionFactory) {
         ConnectionFactoryInitializer initializer = new ConnectionFactoryInitializer();
         initializer.setConnectionFactory(connectionFactory);
@@ -18,4 +20,3 @@ public class R2dbcInitConfig {
         return initializer;
     }
 }
-

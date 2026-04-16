@@ -1,7 +1,5 @@
 package hit400.cleo.recruitify.dto;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import java.util.List;
 
 public record QualifiedCandidateDto(
@@ -14,7 +12,6 @@ public record QualifiedCandidateDto(
         double matchScore,
         List<String> matchedRequiredSkills,
         List<String> matchedOptionalSkills,
-        JsonNode source
+        Object source
 ) {
 }
-
