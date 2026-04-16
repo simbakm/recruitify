@@ -9,6 +9,7 @@ import org.springframework.r2dbc.connection.init.ConnectionFactoryInitializer;
 import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator;
 
 @Configuration
+@ConditionalOnProperty(name = "app.db.init.enabled", havingValue = "true", matchIfMissing = true)
 public class R2dbcInitConfig {
 
     @Bean
