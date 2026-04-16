@@ -61,7 +61,8 @@ public class SerpApiCandidateSearchService {
         String site = (request.serpapi() != null && request.serpapi().site() != null) ? request.serpapi().site() : properties.defaultSite();
         Integer start = (request.serpapi() != null) ? request.serpapi().start() : null;
 
-        String q = buildQuery(request.position(), request.requiredSkills(), request.optionalSkills(), site);
+        List<String> locationKeywords = normalizeList(request.locations());
+        String q = buildQuery(request.position(), request.requiredSkills(), request.optionalSkills(), locationKeywords, site);
 
         return serpApiWebClient
                 .get()
@@ -75,7 +76,11 @@ public class SerpApiCandidateSearchService {
                             .queryParam("safe", properties.safe());
 
                     if (properties.googleDomain() != null) b = b.queryParam("google_domain", properties.googleDomain());
-                    if (properties.location() != null) b = b.queryParam("location", properties.location());
+                    if (!locationKeywords.isEmpty()) {
+                        b = b.queryParam("location", locationKeywords.get(0));
+                    } else if (properties.location() != null) {
+                        b = b.queryParam("location", properties.location());
+                    }
                     if (properties.hl() != null) b = b.queryParam("hl", properties.hl());
                     if (properties.gl() != null) b = b.queryParam("gl", properties.gl());
                     if (start != null && start >= 0) b = b.queryParam("start", start);
@@ -242,9 +247,10 @@ public class SerpApiCandidateSearchService {
         return namePart;
     }
 
-    static String buildQuery(String position, List<String> requiredSkills, List<String> optionalSkills, String site) {
+    static String buildQuery(String position, List<String> requiredSkills, List<String> optionalSkills, List<String> locations, String site) {
         List<String> req = normalizeList(requiredSkills);
         List<String> opt = normalizeList(optionalSkills);
+        List<String> loc = normalizeList(locations);
 
         StringBuilder sb = new StringBuilder();
         sb.append('"').append(position.trim()).append('"');
@@ -263,6 +269,15 @@ public class SerpApiCandidateSearchService {
             for (int i = 0; i < opt.size(); i++) {
                 if (i > 0) sb.append(" OR ");
                 sb.append('"').append(opt.get(i)).append('"');
+            }
+            sb.append(')');
+        }
+
+        if (!loc.isEmpty()) {
+            sb.append(' ').append('(');
+            for (int i = 0; i < loc.size(); i++) {
+                if (i > 0) sb.append(" OR ");
+                sb.append('"').append(loc.get(i)).append('"');
             }
             sb.append(')');
         }
