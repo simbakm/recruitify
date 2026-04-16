@@ -51,7 +51,7 @@ public class ProfileController {
         }
         return profileService.findByEmail(email)
                 .map(ResponseEntity::ok)
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+                .defaultIfEmpty(ResponseEntity.noContent().build());
     }
 
     @PutMapping("/{id}")
