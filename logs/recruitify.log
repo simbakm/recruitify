@@ -8221,3 +8221,7 @@ Unconditional classes:
 2026-04-16T13:56:23.773+02:00 INFO  20808 --- [scheduling-1] h.c.v.s.VacancyClosingScheduler : Running vacancy closing scheduler
 2026-04-16T13:57:23.789+02:00 INFO  20808 --- [scheduling-1] h.c.v.s.VacancyClosingScheduler : Running vacancy closing scheduler
 2026-04-16T13:58:23.796+02:00 INFO  20808 --- [scheduling-1] h.c.v.s.VacancyClosingScheduler : Running vacancy closing scheduler
+2026-04-16T13:59:23.828+02:00 INFO  20808 --- [scheduling-1] h.c.v.s.VacancyClosingScheduler : Running vacancy closing scheduler
+2026-04-16T14:00:23.842+02:00 INFO  20808 --- [scheduling-1] h.c.v.s.VacancyClosingScheduler : Running vacancy closing scheduler
+2026-04-16T14:01:23.867+02:00 INFO  20808 --- [scheduling-1] h.c.v.s.VacancyClosingScheduler : Running vacancy closing scheduler
+2026-04-16T14:02:23.880+02:00 INFO  20808 --- [scheduling-1] h.c.v.s.VacancyClosingScheduler : Running vacancy closing scheduler
