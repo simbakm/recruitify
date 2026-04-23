@@ -13,6 +13,7 @@ import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator;
 public class R2dbcInitConfig {
 
     @Bean
+    @ConditionalOnProperty(name = "app.r2dbc.init.enabled", havingValue = "true", matchIfMissing = true)
     public ConnectionFactoryInitializer connectionFactoryInitializer(ConnectionFactory connectionFactory) {
         ConnectionFactoryInitializer initializer = new ConnectionFactoryInitializer();
         initializer.setConnectionFactory(connectionFactory);
@@ -20,4 +21,3 @@ public class R2dbcInitConfig {
         return initializer;
     }
 }
-

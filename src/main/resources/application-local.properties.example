@@ -1,0 +1,10 @@
+# Local-only overrides (copy to application-local.properties and keep it uncommitted)
+# Activate with: --spring.profiles.active=local
+
+# SerpAPI
+serpapi.api-key=YOUR_SERPAPI_API_KEY
+
+# Snov.io
+snovio.client-id=YOUR_SNOVIO_CLIENT_ID
+snovio.client-secret=YOUR_SNOVIO_CLIENT_SECRET
+snovio.default-domain=example.com
