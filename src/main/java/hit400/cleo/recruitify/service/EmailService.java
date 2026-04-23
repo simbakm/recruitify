@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.time.Duration;
+
 @Service
 @RequiredArgsConstructor
 public class EmailService {
@@ -37,6 +39,11 @@ public class EmailService {
                 .doOnSuccess(ignored -> log.info("Email sent to={} subject={}", to, subject))
                 .doOnError(error -> log.error("Failed to send email to={}", to, error))
                 .subscribeOn(Schedulers.boundedElastic())
+                .delayElement(Duration.ofSeconds(1))
+                .onErrorResume(error -> {
+                    log.error("Resuming after email error for to={}: {}", to, error.getMessage());
+                    return Mono.empty();
+                })
                 .then();
     }
 }

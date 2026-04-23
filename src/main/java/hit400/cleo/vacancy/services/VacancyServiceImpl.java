@@ -140,7 +140,7 @@ public class VacancyServiceImpl implements VacancyService {
                     return vacancyRepository.save(vacancy);
                 })
                 .flatMapMany(vacancy -> applicationRepository.findByVacancyId(vacancy.getId())
-                        .flatMap(application -> scoreAndUpdateApplication(application, vacancy)))
+                        .concatMap(application -> scoreAndUpdateApplication(application, vacancy)))
                 .then()
                 .doOnSuccess(ignored -> log.info("Close and score completed: vacancyId={}", vacancyId))
                 .doOnError(error -> log.error("Close and score failed: vacancyId={}", vacancyId, error));

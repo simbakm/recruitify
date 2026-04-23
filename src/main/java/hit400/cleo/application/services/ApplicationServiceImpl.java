@@ -75,7 +75,10 @@ public class ApplicationServiceImpl implements ApplicationService {
                             .position(vacancy.getTitle())
                             .build();
 
-                    return applicationRepository.save(application).map(this::toResponse);
+                    vacancy.setApplicantCount((vacancy.getApplicantCount() == null ? 0 : vacancy.getApplicantCount()) + 1);
+                    return vacancyRepository.save(vacancy)
+                            .then(applicationRepository.save(application))
+                            .map(this::toResponse);
                 })
                 .doOnSuccess(saved -> log.info("Application created: id={} vacancyId={} candidateId={}",
                         saved.getId(), saved.getVacancyId(), saved.getCandidateId()))

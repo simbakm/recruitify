@@ -14,6 +14,7 @@ class SerpApiCandidateSearchServiceTest {
                 "Software Engineer",
                 List.of("Java", "Spring Boot"),
                 List.of("AWS"),
+                List.of(),
                 "linkedin.com/in"
         );
 
