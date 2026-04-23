@@ -36,10 +36,10 @@ public class EmailService {
                     message.setText(body);
                     mailSender.send(message);
                 })
+                .subscribeOn(Schedulers.boundedElastic())
+                .delaySubscription(Duration.ofSeconds(3))
                 .doOnSuccess(ignored -> log.info("Email sent to={} subject={}", to, subject))
                 .doOnError(error -> log.error("Failed to send email to={}", to, error))
-                .subscribeOn(Schedulers.boundedElastic())
-                .delayElement(Duration.ofSeconds(1))
                 .onErrorResume(error -> {
                     log.error("Resuming after email error for to={}: {}", to, error.getMessage());
                     return Mono.empty();
